@@ -211,6 +211,7 @@ strings! {
     "already_owned" => ["이미 보유", "Already owned", "所持中", "已拥有", "Ya posee"],
     "partner_already_owns" => ["상대방이 이미 보유 중인 카드입니다", "Partner already owns this card", "相手が既に所持しているカードです", "对方已拥有该卡片", "La otra persona ya posee esta carta"],
     "select_image" => ["사진 선택", "Select image", "画像を選択", "选择图片", "Seleccionar foto"],
+    "choose_file" => ["파일 선택", "Choose File", "ファイルを選択", "选择文件", "Seleccionar archivo"],
 }
 
 /// Simple `{name}` placeholder substitution.

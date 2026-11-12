@@ -1266,27 +1266,26 @@ textarea.input { resize: vertical; }
 /* create */
 .segmented.four button { font-size: 12px; }
 .image-pick { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.btn-pick-photo {
+.btn-file-select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 12px;
-  background: rgba(122, 107, 255, 0.12);
-  border: 1.5px solid var(--primary);
-  color: #fff;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px dashed var(--line-strong);
+  border-radius: 10px;
   cursor: pointer;
+  min-height: 44px;
   touch-action: manipulation;
   transition: all 0.15s ease;
 }
-.btn-pick-photo:active {
-  background: var(--primary);
-  color: #fff;
-  transform: scale(0.97);
+.btn-file-select:active {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--primary);
 }
 .image-pick input[type="file"], .field input[type="file"] {
   font-size: 13px;

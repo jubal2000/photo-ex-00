@@ -171,19 +171,22 @@ pub fn EditArtist(artist_id: String) -> Element {
                         name: name(),
                         size: 64,
                     }
-                    button {
-                        class: "btn-pick-photo",
-                        r#type: "button",
-                        onclick: move |_| {
-                            spawn(async move {
-                                if let Some(data_url) = crate::platform::image_picker::pick_image().await {
-                                    crop_img.set(Some(data_url));
-                                }
-                            });
-                        },
-                        "📷 " {app.tr("select_image")}
+                    if cfg!(target_os = "ios") {
+                        button {
+                            class: "btn-file-select",
+                            r#type: "button",
+                            onclick: move |_| {
+                                spawn(async move {
+                                    if let Some(data_url) = crate::platform::image_picker::pick_image().await {
+                                        crop_img.set(Some(data_url));
+                                    }
+                                });
+                            },
+                            {app.tr("choose_file")}
+                        }
+                    } else {
+                        input { id: "edit-artist-image-file-input", r#type: "file", accept: "image/*", onchange: on_image }
                     }
-                    input { id: "edit-artist-image-file-input", r#type: "file", accept: "image/*", onchange: on_image }
                 }
                 input { class: "input", placeholder: app.tr("image_url"), value: "{image_url}", oninput: move |e| image_url.set(e.value()) }
             }

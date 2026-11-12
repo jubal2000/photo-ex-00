@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "46168768411",
+    "firebase_url": "https://tango-player-00-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "tango-player-00",
+    "storage_bucket": "tango-player-00.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:46168768411:android:687d7c095f74c2b5a7eb3e",
+        "android_client_info": {
+          "package_name": "com.jhfactory.poca00"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "46168768411-2tcihc5hges6mi340r13d07ojir7qh94.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jhfactory.poca00",
+            "certificate_hash": "30eb4a16c5bf5fd2ca9c79c42473bd28bbee0bc3"
+          }
+        },
+        {
+          "client_id": "46168768411-67karo70996tg9ltnnbvohbm802o4339.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jhfactory.poca00",
+            "certificate_hash": "fb438841ddc60686cf1a491debf3c9bebade62e6"
+          }
+        },
+        {
+          "client_id": "46168768411-a6d4ok9keqffsg3jl880gopr1lljo30r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCiwznC-mUPzixcYytOOaR9QXvbfJaZsJU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "46168768411-a6d4ok9keqffsg3jl880gopr1lljo30r.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "46168768411-1emm53rq0hh1cdqfdhggrhiglam3cm15.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.jhfactory.tp00"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

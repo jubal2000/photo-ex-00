@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PhotoCard Exchange · Sign in</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif; margin: 0; min-height: 100vh;
+           display: grid; place-items: center; background: #faf8fc; color: #1d1a24; }
+    .box { text-align: center; padding: 32px; max-width: 360px; }
+    .spinner { width: 32px; height: 32px; margin: 0 auto 16px; border: 3px solid #ece8f2; border-top-color: #7a6bff;
+               border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ok { font-size: 48px; }
+    .err { color: #e5484d; }
+  </style>
+  <!-- Firebase web config (edit config.js for your project) -->
+  <script src="config.js"></script>
+</head>
+<body>
+  <div class="box">
+    <div id="spin" class="spinner"></div>
+    <p id="msg"></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import {
+      getAuth, connectAuthEmulator, GoogleAuthProvider, OAuthProvider,
+      signInWithRedirect, getRedirectResult, signInWithCustomToken,
+    } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+    const cfg = window.PHOTO_EXCHANGER_CONFIG;
+    const L = {
+      ko: { wait: "로그인 중…", done: "로그인 완료! 앱으로 돌아가 주세요.", fail: "로그인에 실패했어요: " },
+      en: { wait: "Signing in…", done: "Signed in! Please return to the app.", fail: "Sign-in failed: " },
+      ja: { wait: "ログイン中…", done: "ログイン完了！アプリに戻ってください。", fail: "ログインに失敗しました: " },
+      zh: { wait: "正在登录…", done: "登录成功！请返回应用。", fail: "登录失败：" },
+      es: { wait: "Iniciando sesión…", done: "¡Listo! Vuelve a la app.", fail: "Error al iniciar sesión: " },
+    };
+    const q = new URLSearchParams(location.search);
+    const wrongHost = !cfg.useEmulator && cfg.firebase.authDomain && location.hostname !== cfg.firebase.authDomain;
+    if (wrongHost) {
+      // Ensure the page runs on the exact same origin as firebase.authDomain
+      // so browsers do not block third-party storage during signInWithRedirect.
+      location.replace(`https://${cfg.firebase.authDomain}${location.pathname}${location.search}`);
+    } else if (q.get("session")) {
+      // Remember the request across the OAuth redirect round-trip in both storages.
+      const sess = q.get("session");
+      const prov = q.get("provider") || "google";
+      const lng = q.get("lang") || "ko";
+      const ret = q.get("return_url") || "";
+
+      sessionStorage.setItem("pe.session", sess);
+      sessionStorage.setItem("pe.provider", prov);
+      sessionStorage.setItem("pe.lang", lng);
+      sessionStorage.removeItem("pe.redirected");
+      localStorage.setItem("pe.session", sess);
+      localStorage.setItem("pe.provider", prov);
+      localStorage.setItem("pe.lang", lng);
+      if (ret) {
+        sessionStorage.setItem("pe.return_url", ret);
+        localStorage.setItem("pe.return_url", ret);
+      }
+      if (!q.get("code")) {
+        history.replaceState(null, "", location.pathname);
+      }
+    }
+
+    const session = sessionStorage.getItem("pe.session") || localStorage.getItem("pe.session");
+    const provider = sessionStorage.getItem("pe.provider") || localStorage.getItem("pe.provider") || "google";
+    const returnUrl = sessionStorage.getItem("pe.return_url") || localStorage.getItem("pe.return_url");
+    const t = L[sessionStorage.getItem("pe.lang") || localStorage.getItem("pe.lang")] || L.ko;
+    const msg = (s, cls) => { const m = document.getElementById("msg"); m.textContent = s; m.className = cls || ""; };
+    msg(t.wait);
+
+    const app = initializeApp(cfg.firebase);
+    const auth = getAuth(app);
+    if (cfg.useEmulator) {
+      connectAuthEmulator(auth, `http://${location.hostname}:9099`, { disableWarnings: true });
+    }
+    const redirectUri = location.origin + location.pathname;
+
+    async function handOff(user) {
+      const idToken = await user.getIdToken();
+      try {
+        await fetch(`${cfg.functionsBaseUrl.replace("127.0.0.1", location.hostname)}/authSession`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+          body: JSON.stringify({ session, refreshToken: user.refreshToken }),
+        });
+      } catch (err) {
+        console.warn("authSession POST warning:", err);
+      }
+
+      const appDeepLink = `poca00://auth?session=${session}&refreshToken=${encodeURIComponent(user.refreshToken)}&provider=${provider}`;
+
+      // Notify opener window if opened as popup
+      try {
+        if (window.opener && !window.opener.closed) {
+          window.opener.postMessage({
+            type: "PHOTO_EXCHANGER_AUTH",
+            refreshToken: user.refreshToken,
+            provider: provider,
+          }, "*");
+        }
+      } catch (e) {}
+
+      // If on mobile app (iOS/Android without returnUrl), try reopening app via deep link
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile && !returnUrl) {
+        try {
+          location.href = appDeepLink;
+        } catch (e) {}
+      }
+
+      // Try closing the tab/window
+      try {
+        window.close();
+      } catch (e) {}
+
+      // If not closed and returnUrl exists, automatically navigate back to the web app!
+      if (returnUrl) {
+        try {
+          const u = new URL(returnUrl);
+          u.searchParams.set("refreshToken", user.refreshToken);
+          u.searchParams.set("provider", provider);
+          location.replace(u.toString());
+          return;
+        } catch (e) {
+          console.error("Invalid return_url:", e);
+        }
+      }
+
+      sessionStorage.clear();
+      localStorage.removeItem("pe.session");
+      localStorage.removeItem("pe.return_url");
+      document.getElementById("spin")?.remove();
+      document.querySelector(".box").insertAdjacentHTML("afterbegin", '<div class="ok">✅</div>');
+      msg(t.done);
+      
+      const actionUrl = returnUrl || appDeepLink;
+      const btnText = returnUrl ? "앱으로 이동" : "PhotoExchanger 앱으로 돌아가기";
+      document.querySelector(".box").insertAdjacentHTML("beforeend",
+        `<div style="margin-top:20px;"><a href="${actionUrl}" style="display:inline-block;padding:12px 24px;background:#7a6bff;color:#fff;border-radius:12px;text-decoration:none;font-size:15px;font-weight:700;box-shadow:0 4px 14px rgba(122,107,255,0.35);">${btnText}</a></div>`
+      );
+    }
+
+    async function run() {
+      if (wrongHost) return;
+      if (!/^[a-f0-9]{32}$/.test(session || "")) throw new Error("invalid session");
+
+      // Kakao: authorization code flow -> Cloud Function -> Firebase custom token
+      if (provider === "kakao") {
+        const code = q.get("code");
+        if (!code) {
+          const u = new URL("https://kauth.kakao.com/oauth/authorize");
+          u.searchParams.set("client_id", cfg.kakaoRestApiKey);
+          u.searchParams.set("redirect_uri", redirectUri);
+          u.searchParams.set("response_type", "code");
+          u.searchParams.set("state", session);
+          location.href = u.toString();
+          return;
+        }
+        if (q.get("state") !== session) throw new Error("state mismatch");
+        const r = await fetch(`${cfg.functionsBaseUrl.replace("127.0.0.1", location.hostname)}/kakaoToken`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code, redirectUri }),
+        });
+        const j = await r.json();
+        if (!j.customToken) throw new Error(JSON.stringify(j));
+        const cred = await signInWithCustomToken(auth, j.customToken);
+        return handOff(cred.user);
+      }
+
+      // Google / Apple: Firebase redirect flow
+      const result = await getRedirectResult(auth);
+      if (result && result.user) return handOff(result.user);
+      if (typeof auth.authStateReady === "function") await auth.authStateReady();
+      if (auth.currentUser && sessionStorage.getItem("pe.redirected") === "1") {
+        return handOff(auth.currentUser);
+      }
+      if (sessionStorage.getItem("pe.redirected") === "1") {
+        sessionStorage.removeItem("pe.redirected");
+        throw new Error("OAuth redirect completed without a session. Please try again.");
+      }
+      if (auth.currentUser) {
+        await auth.signOut();
+      }
+      sessionStorage.setItem("pe.redirected", "1");
+      const p = provider === "apple" ? new OAuthProvider("apple.com") : new GoogleAuthProvider();
+      if (provider === "apple") { p.addScope("email"); p.addScope("name"); }
+      await signInWithRedirect(auth, p);
+    }
+
+    run().catch((e) => {
+      document.getElementById("spin")?.remove();
+      msg(t.fail + (e && e.message ? e.message : e), "err");
+    });
+  </script>
+</body>
+</html>

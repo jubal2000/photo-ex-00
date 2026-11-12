@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "source ~/.cargo/env && dx serve --platform web --port 8081 --open false"],
+      "port": 8081
+    }
+  ]
+}

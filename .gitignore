@@ -1,0 +1,8 @@
+/target
+/dist
+.env
+firebase/functions/node_modules
+firebase/functions/.env
+firebase/*.log
+firebase/.firebase
+.DS_Store

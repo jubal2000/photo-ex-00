@@ -1,0 +1,13 @@
+AddType application/wasm .wasm
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.wasm$">
+    Header set Cache-Control "max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.(js|css)$">
+    Header set Cache-Control "max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "index\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

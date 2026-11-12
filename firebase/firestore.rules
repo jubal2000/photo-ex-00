@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isUser(uid) { return signedIn() && request.auth.uid == uid; }
+    function validName() {
+      return request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 60;
+    }
+    function creating() {
+      return validName() && request.resource.data.createdBy == request.auth.uid;
+    }
+
+    // ---- shared catalogue: anyone signed in can read & add; any signed-in user can update details ----
+    match /artists/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && creating();
+      allow update: if signedIn();
+      allow delete: if signedIn() && resource.data.createdBy == request.auth.uid;
+    }
+    match /categories/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && creating()
+        && (request.resource.data.artistId == ''
+            || !('artistId' in request.resource.data)
+            || exists(/databases/$(database)/documents/artists/$(request.resource.data.artistId)));
+      allow update: if signedIn();
+      allow delete: if signedIn() && resource.data.createdBy == request.auth.uid;
+    }
+    match /series/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && creating()
+        && exists(/databases/$(database)/documents/categories/$(request.resource.data.categoryId));
+      allow update: if signedIn();
+      allow delete: if signedIn() && resource.data.createdBy == request.auth.uid;
+    }
+    match /cards/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && creating()
+        && exists(/databases/$(database)/documents/series/$(request.resource.data.seriesId));
+      allow update: if signedIn();
+      allow delete: if signedIn() && resource.data.createdBy == request.auth.uid;
+    }
+
+    // ---- users ----
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow write: if isUser(uid);
+
+      match /holdings/{cardId} {
+        allow read: if isUser(uid) || (signedIn() && resource.data.visible == true);
+        allow write: if isUser(uid)
+          && (request.resource == null || (
+               request.resource.data.ownerUid == uid
+               && request.resource.data.count is int && request.resource.data.count >= 0
+               && request.resource.data.tradable is int && request.resource.data.tradable >= 0
+               && request.resource.data.tradable <= request.resource.data.count));
+      }
+      match /groupVisibility/{key} {
+        allow read, write: if isUser(uid);
+      }
+    }
+
+    // collection-group query used by the home screen / category offers
+    match /{path=**}/holdings/{cardId} {
+      allow read: if signedIn() && (resource.data.visible == true || resource.data.ownerUid == request.auth.uid);
+    }
+
+    // ---- trades ----
+    match /trades/{id} {
+      allow read: if signedIn()
+        && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.toUid != request.auth.uid
+        && request.resource.data.status == 'pending';
+      // Only the status may change, and only pending -> rejected (receiver) / cancelled (sender).
+      // Acceptance happens in the acceptTrade Cloud Function (admin, transactional).
+      allow update: if signedIn()
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && ((request.resource.data.status == 'rejected' && resource.data.toUid == request.auth.uid)
+          || (request.resource.data.status == 'cancelled' && resource.data.fromUid == request.auth.uid));
+    }
+
+    // ---- sign-in hand-off (functions only) ----
+    match /authSessions/{id} {
+      allow read, write: if false;
+    }
+  }
+}

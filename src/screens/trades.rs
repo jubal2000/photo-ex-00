@@ -100,17 +100,17 @@ pub fn TradesScreen() -> Element {
             // Top Navigation Tabs
             div { class: "segmented trades-tabs",
                 button {
-                    class: if current_tab() == TradeTab::Requests { "active" } else { "" },
+                    class: if current_tab() == TradeTab::Requests { "tab-btn on active" } else { "tab-btn" },
                     onclick: move |_| current_tab.set(TradeTab::Requests),
-                    {app.tr("tab_trade_requests")}
+                    span { class: "tab-label", {app.tr("tab_trade_requests")} }
                     if pending_count > 0 {
                         span { class: "tab-badge", "{pending_count}" }
                     }
                 }
                 button {
-                    class: if current_tab() == TradeTab::Accepted { "active" } else { "" },
+                    class: if current_tab() == TradeTab::Accepted { "tab-btn on active" } else { "tab-btn" },
                     onclick: move |_| current_tab.set(TradeTab::Accepted),
-                    {app.tr("tab_trade_history")}
+                    span { class: "tab-label", {app.tr("tab_trade_history")} }
                     if !accepted_trades.is_empty() {
                         span { class: "tab-badge muted-badge", "{accepted_trades.len()}" }
                     }

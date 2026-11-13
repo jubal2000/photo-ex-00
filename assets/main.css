@@ -1221,33 +1221,75 @@ textarea.input { resize: vertical; }
   padding: 16px;
 }
 .trades-tabs {
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  padding: 4px;
+  background: rgba(14, 11, 20, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  display: flex;
+  gap: 4px;
 }
-.trades-tabs button {
+.trades-tabs button.tab-btn {
+  flex: 1;
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 9px;
   font-weight: 600;
   font-size: 14px;
+  color: var(--muted, #948fa3);
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+.trades-tabs button.tab-btn:hover:not(.active) {
+  color: #d1ccd9;
+  background: rgba(255, 255, 255, 0.04);
+}
+.trades-tabs button.tab-btn.active,
+.trades-tabs button.tab-btn.on {
+  background: linear-gradient(135deg, var(--primary, #7a6bff), #8e7eff);
+  color: #ffffff;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 3px 12px rgba(122, 107, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 .tab-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
   font-size: 11px;
   font-weight: 700;
-  border-radius: 9px;
-  background: var(--primary);
-  color: #fff;
+  border-radius: 10px;
+  background: rgba(122, 107, 255, 0.25);
+  color: #c4bcff;
+  border: 1px solid rgba(122, 107, 255, 0.4);
+  transition: all 0.2s ease;
+}
+.trades-tabs button.tab-btn.active .tab-badge,
+.trades-tabs button.tab-btn.on .tab-badge {
+  background: #ffffff;
+  color: var(--primary, #7a6bff);
+  border: 1px solid transparent;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 .tab-badge.muted-badge {
-  background: rgba(255, 255, 255, 0.16);
-  color: var(--text-secondary, #aaa);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--muted, #8e8b99);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.trades-tabs button.tab-btn.active .tab-badge.muted-badge,
+.trades-tabs button.tab-btn.on .tab-badge.muted-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
 }
 .trades-filter-bar {
   display: flex;

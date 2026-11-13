@@ -20,6 +20,7 @@ pub fn ProfileScreen() -> Element {
     let mut upload_progress = use_signal(|| None::<u8>);
 
     let catalog = app.catalog.read().clone();
+    let email = app.profile.read().email.clone().or_else(|| app.email());
 
     let on_photo = move |e: Event<FormData>| {
         spawn(async move {
@@ -88,6 +89,21 @@ pub fn ProfileScreen() -> Element {
                     if upload_progress().is_some() { {app.tr("loading")} } else { {app.tr("profile_photo")} }
                 }
                 input { id: "profile-photo-file-input", r#type: "file", accept: "image/*", hidden: true, onchange: on_photo }
+            }
+            if let Some(em) = email.as_deref().filter(|s| !s.is_empty()) {
+                div { class: "field",
+                    div { class: "field-header-row",
+                        span { {app.tr("email")} }
+                        span { class: "field-hint muted small", {app.tr("login_email")} }
+                    }
+                    input {
+                        class: "input profile-email-input",
+                        r#type: "text",
+                        readonly: true,
+                        disabled: true,
+                        value: "{em}",
+                    }
+                }
             }
             label { class: "field", span { {app.tr("nickname")} }
                 input {

@@ -25,6 +25,7 @@ pub struct Profile {
     pub photo_url: String,
     pub favorite_artists: Vec<String>,
     pub trade_locations: Vec<String>,
+    pub email: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]

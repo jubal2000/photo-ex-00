@@ -7,6 +7,7 @@
 //! Android without deep-link plumbing and without embedding OAuth in a WebView
 //! (which Google blocks).
 
+use base64::Engine;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -21,6 +22,24 @@ pub struct Session {
     /// Unix seconds when `id_token` expires.
     pub expires_at: u64,
     pub provider: String,
+    #[serde(default)]
+    pub email: Option<String>,
+}
+
+/// Decodes the payload portion of a Firebase ID token JWT to extract the user email if present.
+pub fn extract_email_from_id_token(id_token: &str) -> Option<String> {
+    let mut parts = id_token.split('.');
+    let _header = parts.next()?;
+    let payload_b64 = parts.next()?;
+    let decoded = base64::engine::general_purpose::URL_SAFE_NO_PAD
+        .decode(payload_b64)
+        .or_else(|_| base64::engine::general_purpose::STANDARD.decode(payload_b64))
+        .ok()?;
+    let v: serde_json::Value = serde_json::from_slice(&decoded).ok()?;
+    v.get("email")
+        .and_then(|x| x.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -46,12 +65,15 @@ pub async fn refresh(refresh_token: &str, provider: &str) -> Result<Session, FbE
     let v = http::post_form(&url, &[("grant_type", "refresh_token"), ("refresh_token", refresh_token)]).await?;
     let s = |k: &str| v.get(k).and_then(|x| x.as_str()).unwrap_or_default().to_string();
     let expires_in: u64 = s("expires_in").parse().unwrap_or(3600);
+    let id_token = s("id_token");
+    let email = extract_email_from_id_token(&id_token);
     Ok(Session {
         uid: s("user_id"),
-        id_token: s("id_token"),
+        id_token,
         refresh_token: s("refresh_token"),
         expires_at: crate::platform::now_secs() + expires_in,
         provider: provider.to_string(),
+        email,
     })
 }
 
@@ -67,6 +89,7 @@ pub async fn sign_in_guest() -> Result<Session, FbError> {
         refresh_token: s("refreshToken"),
         expires_at: crate::platform::now_secs() + expires_in,
         provider: "guest".into(),
+        email: None,
     })
 }
 

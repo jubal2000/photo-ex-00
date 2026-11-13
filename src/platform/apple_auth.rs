@@ -84,12 +84,20 @@ pub async fn sign_in_native() -> Result<Session, FbError> {
     let v = http::post_json(&url, None, &body).await?;
     let s = |k: &str| v.get(k).and_then(|x| x.as_str()).unwrap_or_default().to_string();
     let expires_in: u64 = s("expiresIn").parse().unwrap_or(3600);
+    let id_tok = s("idToken");
+    let res_email = s("email");
+    let email = if !res_email.is_empty() {
+        Some(res_email)
+    } else {
+        crate::firebase::auth::extract_email_from_id_token(&id_tok)
+    };
 
     Ok(Session {
         uid: s("localId"),
-        id_token: s("idToken"),
+        id_token: id_tok,
         refresh_token: s("refreshToken"),
         expires_at: crate::platform::now_secs() + expires_in,
         provider: "apple".into(),
+        email,
     })
 }

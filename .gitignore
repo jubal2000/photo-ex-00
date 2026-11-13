@@ -6,3 +6,6 @@ firebase/functions/.env
 firebase/*.log
 firebase/.firebase
 .DS_Store
+*.p8
+*.mobileprovision
+

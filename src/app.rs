@@ -283,10 +283,23 @@ pub async fn load_user_data(mut app: AppState, uid: String) {
         api::load_holdings(&tok, &uid),
     );
     match p {
-        Ok(Some(p)) => app.profile.set(p),
+        Ok(Some(mut p)) => {
+            let session_email = app.session.read().as_ref().and_then(|s| s.email.clone());
+            if p.email.is_none() && session_email.is_some() {
+                p.email = session_email;
+                let _ = api::save_profile(&tok, &uid, &p).await;
+            }
+            app.profile.set(p);
+        }
         Ok(None) => {
             // First sign-in: create the profile document (sign-up).
-            let p = Profile { id: uid.clone(), nickname: format!("user{}", &uid[..uid.len().min(5)]), ..Default::default() };
+            let session_email = app.session.read().as_ref().and_then(|s| s.email.clone());
+            let p = Profile {
+                id: uid.clone(),
+                nickname: format!("user{}", &uid[..uid.len().min(5)]),
+                email: session_email,
+                ..Default::default()
+            };
             let _ = api::save_profile(&tok, &uid, &p).await;
             app.profile.set(p);
         }

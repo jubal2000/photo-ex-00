@@ -555,6 +555,14 @@ input.input.input-error {
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 .profile-photo { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.profile-email-input {
+  opacity: 0.85;
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: var(--text-muted, #a19da8) !important;
+  cursor: default;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+}
 
 .stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; background: rgba(22, 17, 30, 0.85); }
 .stepper button { width: 28px; height: 28px; font-size: 16px; color: var(--text); }

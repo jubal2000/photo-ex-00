@@ -84,6 +84,12 @@ impl AppState {
         self.session.read().as_ref().map(|s| s.uid.clone()).unwrap_or_default()
     }
 
+    pub fn email(&self) -> Option<String> {
+        self.profile.read().email.clone().or_else(|| {
+            self.session.read().as_ref().and_then(|s| s.email.clone())
+        })
+    }
+
     pub fn current(&self) -> Screen {
         self.nav.read().last().cloned().unwrap_or(Screen::Home)
     }

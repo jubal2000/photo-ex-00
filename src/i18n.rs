@@ -129,6 +129,8 @@ strings! {
     "add_to_holdings" => ["보유 추가", "Add to my cards", "所持に追加", "加入我的卡片", "Añadir a mis cartas"],
     "added" => ["추가했어요", "Added", "追加しました", "已添加", "Añadido"],
     "profile_photo" => ["사진 변경", "Change photo", "写真を変更", "更换照片", "Cambiar foto"],
+    "email" => ["이메일", "Email", "メールアドレス", "邮箱", "Correo electrónico"],
+    "login_email" => ["로그인 계정", "Sign-in Account", "ログインアカウント", "登录账号", "Cuenta de inicio de sesión"],
     "nickname" => ["닉네임", "Nickname", "ニックネーム", "昵称", "Apodo"],
     "greeting" => ["인사말", "Greeting", "ひとこと", "签名", "Saludo"],
     "fav_artists" => ["선호 아티스트", "Favourite artists", "好きなアーティスト", "喜欢的艺人", "Artistas favoritos"],

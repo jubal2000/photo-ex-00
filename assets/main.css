@@ -1361,17 +1361,26 @@ textarea.input { resize: vertical; }
 .trade-column {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
+  text-align: center;
 }
 .trade-col-label {
   font-size: 11px;
   font-weight: 600;
   color: var(--text-secondary, #aaa);
+  text-align: center;
+  width: 100%;
 }
 .trade-cards-scroll {
   display: flex;
-  gap: 6px;
+  gap: 8px;
+  justify-content: center;
+  justify-content: safe center;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   scrollbar-width: none;
   padding: 2px 0;
@@ -1381,6 +1390,8 @@ textarea.input { resize: vertical; }
 }
 .trade-thumb-wrap {
   flex-shrink: 0;
+  display: flex;
+  justify-content: center;
 }
 .trade-exchange-arrow {
   color: var(--primary);

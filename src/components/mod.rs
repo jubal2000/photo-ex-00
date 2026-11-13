@@ -13,16 +13,59 @@ const LOGO: Asset = asset!("/assets/logo.svg");
 #[component]
 pub fn Header() -> Element {
     let mut app = use_app();
-    let depth = app.nav.read().len();
+    let nav = app.nav.read().clone();
+    let current_screen = nav.last().cloned().unwrap_or(Screen::Home);
+    let is_home = matches!(current_screen, Screen::Home);
+    let depth = nav.len();
+
+    let title = match &current_screen {
+        Screen::Home => "PhotoEx".to_string(),
+        Screen::ArtistDetail { artist_id, .. } => {
+            let cat = app.catalog.read();
+            let name = cat.artist_name(artist_id);
+            if name.is_empty() {
+                app.tr("create_artist").to_string()
+            } else {
+                name.to_string()
+            }
+        }
+        Screen::CategoryOffers { category_id, .. } => {
+            let cat = app.catalog.read();
+            let name = cat.category_name(category_id);
+            if name.is_empty() {
+                app.tr("create_category").to_string()
+            } else {
+                name.to_string()
+            }
+        }
+        Screen::Trade { .. } => app.tr("trade_title").to_string(),
+        Screen::Search => app.tr("search").to_string(),
+        Screen::Profile => app.tr("menu_profile").to_string(),
+        Screen::Trades => app.tr("menu_trades").to_string(),
+        Screen::Holdings => app.tr("menu_holdings").to_string(),
+        Screen::Create { .. } => app.tr("menu_create").to_string(),
+        Screen::EditCard { .. } => app.tr("edit_card").to_string(),
+        Screen::EditArtist { .. } => app.tr("edit_artist").to_string(),
+        Screen::EditCategory { .. } => app.tr("edit_category").to_string(),
+        Screen::EditSeries { .. } => app.tr("edit_series").to_string(),
+        Screen::Settings => app.tr("menu_settings").to_string(),
+    };
+
     rsx! {
         header { class: "header",
             div { class: "header-left",
                 if depth > 1 {
                     button { class: "icon-btn", aria_label: app.tr("back"), onclick: move |_| app.back(), "‹" }
                 }
-                button { class: "logo-btn", onclick: move |_| app.open(Screen::Home),
-                    img { src: LOGO, alt: "logo", class: "logo" }
-                    span { class: "logo-text", {app.tr("app_name")} }
+                if is_home {
+                    button { class: "logo-btn", onclick: move |_| app.open(Screen::Home),
+                        img { src: LOGO, alt: "logo", class: "logo" }
+                        span { class: "logo-text", "PhotoEx" }
+                    }
+                } else {
+                    div { class: "header-title-box",
+                        span { class: "header-page-title", "{title}" }
+                    }
                 }
             }
             div { class: "header-right",

@@ -59,7 +59,7 @@ macro_rules! strings {
 }
 
 strings! {
-    "app_name" => ["포토카드 교환", "PhotoCard Exchange", "フォトカード交換", "小卡交换", "Intercambio de Photocards"],
+    "app_name" => ["PhotoEx", "PhotoEx", "PhotoEx", "PhotoEx", "PhotoEx"],
     "login_title" => ["포토카드를 교환해 보세요", "Trade your photocards", "フォトカードを交換しよう", "来交换小卡吧", "Intercambia tus photocards"],
     "login_google" => ["Google로 계속하기", "Continue with Google", "Googleで続ける", "使用 Google 继续", "Continuar con Google"],
     "login_apple" => ["Apple로 계속하기", "Continue with Apple", "Appleで続ける", "使用 Apple 继续", "Continuar con Apple"],

@@ -4,7 +4,7 @@ default_platform = "web"
 asset_dir = "assets"
 
 [web.app]
-title = "PhotoExchanger"
+title = "PhotoEx"
 base_path = "photo-ex"
 
 [bundle]

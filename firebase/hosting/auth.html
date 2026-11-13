@@ -163,50 +163,46 @@
       }
 
       const appDeepLink = `poca00://auth?session=${session}&refreshToken=${encodeURIComponent(rt)}&provider=${provider}`;
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isPopup = !!(window.opener && !window.opener.closed);
 
-      // 1. Notify opener window if opened as popup/tab
-      try {
-        if (window.opener && !window.opener.closed) {
+      // 1. Notify opener window if opened as popup
+      if (isPopup) {
+        try {
           window.opener.postMessage({
             type: "PHOTO_EXCHANGER_AUTH",
             refreshToken: rt,
             provider: provider,
           }, "*");
-        }
-      } catch (e) {}
+        } catch (e) {}
 
-      // 2. BroadcastChannel to sync across tabs
-      try {
-        if (window.BroadcastChannel) {
-          const bc = new BroadcastChannel("photo_exchanger_auth");
-          bc.postMessage({ type: "PHOTO_EXCHANGER_AUTH", refreshToken: rt, provider: provider });
-          setTimeout(() => bc.close(), 1000);
-        }
-      } catch (e) {}
+        sessionStorage.clear();
+        localStorage.removeItem("pe.session");
+        localStorage.removeItem("pe.return_url");
+        localStorage.removeItem("pe.redirected");
+        document.getElementById("spin")?.remove();
+        document.querySelector(".box").insertAdjacentHTML("afterbegin", '<div class="ok" style="color:#7a6bff;font-size:36px;font-weight:bold;">✓</div>');
+        msg(t.done);
 
-      // 3. localStorage sync event for any open tab
-      try {
-        localStorage.setItem("pe_auth_sync", JSON.stringify({
-          time: Date.now(),
-          refreshToken: rt,
-          provider: provider,
-        }));
-      } catch (e) {}
+        setTimeout(() => {
+          try { window.close(); } catch (e) {}
+        }, 500);
+        return;
+      }
 
-      // If on mobile app (iOS/Android without returnUrl), try reopening app via deep link
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      // 2. If on mobile app (iOS/Android without returnUrl), try reopening app via deep link
       if (isMobile && !returnUrl) {
         try {
           location.href = appDeepLink;
         } catch (e) {}
       }
 
-      // Try closing the tab/window if opened by script
+      // 3. Try closing the tab/window
       try {
         window.close();
       } catch (e) {}
 
-      // If not closed and returnUrl exists, navigate back to the web app
+      // 4. If not closed and returnUrl exists, navigate back to the web app
       if (returnUrl) {
         try {
           const u = new URL(returnUrl);

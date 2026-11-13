@@ -42,10 +42,15 @@ pub fn App() -> Element {
                                 if let Ok(pathname) = w.location().pathname() {
                                     let _ = w.history().and_then(|h| h.replace_state_with_url(&wasm_bindgen::JsValue::NULL, "", Some(&pathname)));
                                 }
-                                if let Ok(s) = auth::refresh(&rt, &url_prov).await {
-                                    app.on_signed_in(s, true);
-                                    app.booted.set(true);
-                                    return;
+                                match auth::refresh(&rt, &url_prov).await {
+                                    Ok(s) => {
+                                        app.on_signed_in(s, true);
+                                        app.booted.set(true);
+                                        return;
+                                    }
+                                    Err(e) => {
+                                        app.show_error(&e);
+                                    }
                                 }
                             }
                         }
@@ -59,7 +64,12 @@ pub fn App() -> Element {
                 let provider = storage::get(KEY_PROVIDER).unwrap_or_default();
                 match auth::refresh(&rt, &provider).await {
                     Ok(s) => app.on_signed_in(s, true),
-                    Err(_) => storage::secure_remove(KEY_REFRESH),
+                    Err(crate::firebase::FbError::Http(400, _)) => {
+                        storage::secure_remove(KEY_REFRESH);
+                    }
+                    Err(_) => {
+                        // Keep saved token across transient network errors
+                    }
                 }
             }
             app.booted.set(true);

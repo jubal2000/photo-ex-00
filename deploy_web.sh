@@ -8,6 +8,48 @@ dx build --platform web --release
 
 cp web/.htaccess target/dx/photo_exchanger/release/web/public/.htaccess 2>/dev/null || true
 
+python3 -c '
+path = "target/dx/photo_exchanger/release/web/public/index.html"
+try:
+    with open(path, "r", encoding="utf-8") as f:
+        html = f.read()
+    patch = """<script>
+(function() {
+  if (window.__peImeGuard) return;
+  window.__peImeGuard = true;
+  var isComposing = false;
+  document.addEventListener("compositionstart", function(e) { isComposing = true; if (e.target) e.target.__isComposing = true; }, true);
+  document.addEventListener("compositionend", function(e) { isComposing = false; if (e.target) e.target.__isComposing = false; }, true);
+  function getPropDesc(obj, prop) { var cur = obj; while (cur) { var d = Object.getOwnPropertyDescriptor(cur, prop); if (d) return d; cur = Object.getPrototypeOf(cur); } return null; }
+  function patchProto(proto) {
+    var desc = getPropDesc(proto, "value");
+    if (!desc || !desc.set || !desc.get) return;
+    var origSet = desc.set, origGet = desc.get;
+    Object.defineProperty(proto, "value", {
+      get: function() { return origGet.call(this); },
+      set: function(val) {
+        if (this === document.activeElement) {
+          if (val !== "" && (isComposing || this.__isComposing)) return;
+          if (origGet.call(this) === val) return;
+        }
+        origSet.call(this, val);
+      },
+      configurable: true, enumerable: true
+    });
+  }
+  patchProto(HTMLInputElement.prototype);
+  patchProto(HTMLTextAreaElement.prototype);
+})();
+</script></head>"""
+    if "</head>" in html and "__peImeGuard" not in html:
+        html = html.replace("</head>", patch, 1)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(html)
+        print("  ✓ Injected IME guard to index.html")
+except Exception as e:
+    print("  ! Index.html patch notice:", e)
+'
+
 echo "▶ Uploading to FTP: ${FTP_HOST}/${FTP_REMOTE_DIR}/"
 python3 - <<PYEOF
 import ftplib, os, sys

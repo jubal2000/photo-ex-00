@@ -100,7 +100,8 @@ pub fn App() -> Element {
         }
     });
 
-    // Prevent pinch-zoom on mobile WebViews while safely preserving user tap/click interactions
+    // 1. Prevent pinch-zoom on mobile WebViews while safely preserving user tap/click interactions.
+    // 2. Protect Korean / CJK IME composition from being cancelled by virtual DOM value overrides.
     use_effect(move || {
         let _ = document::eval(r#"
             if (!window.__peZoomLock) {
@@ -108,6 +109,62 @@ pub fn App() -> Element {
                 document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
                 document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
                 document.addEventListener('gestureend', function(e) { e.preventDefault(); }, { passive: false });
+            }
+
+            if (!window.__peImeGuard) {
+                window.__peImeGuard = true;
+
+                var isComposing = false;
+                document.addEventListener('compositionstart', function(e) {
+                    isComposing = true;
+                    if (e.target) e.target.__isComposing = true;
+                }, true);
+
+                document.addEventListener('compositionend', function(e) {
+                    isComposing = false;
+                    if (e.target) e.target.__isComposing = false;
+                }, true);
+
+                function getPropDesc(obj, prop) {
+                    var cur = obj;
+                    while (cur) {
+                        var d = Object.getOwnPropertyDescriptor(cur, prop);
+                        if (d) return d;
+                        cur = Object.getPrototypeOf(cur);
+                    }
+                    return null;
+                }
+
+                function patchProto(proto) {
+                    var desc = getPropDesc(proto, 'value');
+                    if (!desc || !desc.set || !desc.get) return;
+                    var origSet = desc.set;
+                    var origGet = desc.get;
+
+                    Object.defineProperty(proto, 'value', {
+                        get: function() {
+                            return origGet.call(this);
+                        },
+                        set: function(val) {
+                            if (this === document.activeElement) {
+                                // Do not interrupt active IME composition unless explicitly clearing to empty string
+                                if (val !== "" && (isComposing || this.__isComposing)) {
+                                    return;
+                                }
+                                // Avoid redundant property sets that reset Safari/WebKit selection and IME session
+                                if (origGet.call(this) === val) {
+                                    return;
+                                }
+                            }
+                            origSet.call(this, val);
+                        },
+                        configurable: true,
+                        enumerable: true
+                    });
+                }
+
+                patchProto(HTMLInputElement.prototype);
+                patchProto(HTMLTextAreaElement.prototype);
             }
         "#);
     });

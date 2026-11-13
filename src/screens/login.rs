@@ -40,6 +40,10 @@ pub fn Login() -> Element {
     use_hook(move || {
         if bio_ready {
             bio_login();
+        } else if storage::secure_get(KEY_REFRESH).is_some() {
+            // Already has saved token, clean pending session
+            storage::remove("pe_pending_session");
+            storage::remove("pe_pending_provider");
         } else if let Some(session_id) = storage::get("pe_pending_session") {
             let p_key = storage::get("pe_pending_provider").unwrap_or_else(|| "google".into());
             let provider = match p_key.as_str() {
@@ -86,7 +90,9 @@ pub fn Login() -> Element {
                 Err(e) => {
                     storage::remove("pe_pending_session");
                     storage::remove("pe_pending_provider");
-                    app.show_error(&e);
+                    if app.session.read().is_none() {
+                        app.show_error(&e);
+                    }
                 }
             }
             busy.set(false);

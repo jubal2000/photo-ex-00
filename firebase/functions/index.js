@@ -30,19 +30,63 @@ function fail(res, e) {
 
 const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY || "AIzaSyDtz9C_TCkmrr3lWYP6fOcYQUIgtrd6k14";
 
+async function logAuthEvent(event, data = {}) {
+  try {
+    await db.collection("authLogs").add({
+      event,
+      timestamp: Date.now(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      ...data,
+    });
+  } catch (e) {
+    console.warn("logAuthEvent error:", e);
+  }
+}
+
+exports.authLog = onRequest({ cors: true }, async (req, res) => {
+  if (req.method === "GET") {
+    const limit = Math.min(parseInt(req.query.limit || "20", 10), 100);
+    const snap = await db.collection("authLogs").orderBy("timestamp", "desc").limit(limit).get();
+    const logs = [];
+    snap.forEach((doc) => logs.push({ id: doc.id, ...doc.data() }));
+    return res.json({ count: logs.length, logs });
+  }
+  const data = req.body || {};
+  console.log("CLIENT AUTH LOG:", JSON.stringify(data));
+  await logAuthEvent(data.event || "client_log", {
+    ...data,
+    ip: req.ip,
+    userAgent: req.get("user-agent"),
+  });
+  res.json({ ok: true });
+});
+
 /**
  * POST {session, refreshToken} with Bearer idToken  (from the hosted auth page)
+ * POST {session, error}                             (reporting failure to polling client)
  * GET  ?session=<id>                                 (polled by the app; single use)
  */
 exports.authSession = onRequest({ cors: true }, async (req, res) => {
   try {
     if (req.method === "POST") {
-      const decoded = await verify(req);
-      const { session, refreshToken } = req.body || {};
+      const { session, error, refreshToken } = req.body || {};
       if (!SESSION_RE.test(session || "")) {
         console.warn("authSession POST: invalid session id", session);
         return res.status(400).json({ error: { message: "bad request: invalid session" } });
       }
+
+      // If client is reporting an error, save it so the polling app can unblock immediately
+      if (error) {
+        console.warn(`authSession POST: reporting error for session ${session}:`, error);
+        await db.collection("authSessions").doc(session).set({
+          error: String(error),
+          expiresAt: Date.now() + SESSION_TTL_MS,
+        });
+        await logAuthEvent("authSession_post_error_reported", { session, error });
+        return res.json({ ok: true });
+      }
+
+      const decoded = await verify(req);
 
       let finalRefreshToken = refreshToken;
       if (!finalRefreshToken) {
@@ -72,8 +116,9 @@ exports.authSession = onRequest({ cors: true }, async (req, res) => {
         refreshToken: finalRefreshToken,
         expiresAt: Date.now() + SESSION_TTL_MS,
       });
+      await logAuthEvent("authSession_post_success", { session, uid: decoded.uid });
       console.log(`authSession POST: saved session ${session} for uid ${decoded.uid}`);
-      return res.json({ ok: true });
+      return res.json({ ok: true, refreshToken: finalRefreshToken });
     }
     if (req.method === "GET") {
       const session = String(req.query.session || "");
@@ -87,7 +132,13 @@ exports.authSession = onRequest({ cors: true }, async (req, res) => {
         return d.expiresAt > Date.now() ? d : null;
       });
       if (!out) return res.status(404).json({ error: { message: "pending" } });
+      if (out.error) {
+        console.log(`authSession GET: returning error to client for session ${session}: ${out.error}`);
+        await logAuthEvent("authSession_get_error", { session, error: out.error });
+        return res.json({ error: out.error });
+      }
       console.log(`authSession GET: hand-off session ${session} to polling client`);
+      await logAuthEvent("authSession_get_handoff", { session, uid: out.uid });
       return res.json({ refreshToken: out.refreshToken });
     }
     res.status(405).end();

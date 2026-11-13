@@ -7,20 +7,24 @@
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif; margin: 0; min-height: 100vh;
            display: grid; place-items: center; background: #faf8fc; color: #1d1a24; }
-    .box { text-align: center; padding: 32px; max-width: 360px; }
+    .box { text-align: center; padding: 32px; max-width: 380px; width: 100%; box-sizing: border-box; }
     .spinner { width: 32px; height: 32px; margin: 0 auto 16px; border: 3px solid #ece8f2; border-top-color: #7a6bff;
                border-radius: 50%; animation: spin .8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .ok { font-size: 48px; }
-    .err { color: #e5484d; }
+    .err { color: #e5484d; word-break: break-all; font-size: 14px; margin-top: 12px; }
+    .btn { display: inline-block; padding: 12px 24px; background: #7a6bff; color: #fff; border-radius: 12px;
+           text-decoration: none; font-size: 15px; font-weight: 700; border: none; cursor: pointer;
+           box-shadow: 0 4px 14px rgba(122,107,255,0.35); }
+    .btn:hover { background: #6655ee; }
   </style>
-  <!-- Firebase web config (edit config.js for your project) -->
   <script src="config.js"></script>
 </head>
 <body>
   <div class="box">
     <div id="spin" class="spinner"></div>
     <p id="msg"></p>
+    <div id="action-area" style="margin-top:20px;"></div>
   </div>
 
   <script type="module">
@@ -48,12 +52,10 @@
     };
     const q = new URLSearchParams(location.search);
     const wrongHost = !cfg.useEmulator && cfg.firebase.authDomain && location.hostname !== cfg.firebase.authDomain;
+
     if (wrongHost) {
-      // Ensure the page runs on the exact same origin as firebase.authDomain
-      // so browsers do not block third-party storage during signInWithRedirect.
       location.replace(`https://${cfg.firebase.authDomain}${location.pathname}${location.search}`);
     } else if (q.get("session")) {
-      // Remember the request across the OAuth redirect round-trip in all storages.
       const sess = q.get("session");
       const prov = q.get("provider") || "google";
       const lng = q.get("lang") || "ko";
@@ -76,8 +78,6 @@
         localStorage.setItem("pe.return_url", ret);
         setCookie("pe.return_url", ret);
       }
-      sessionStorage.removeItem("pe.redirected");
-      localStorage.removeItem("pe.redirected");
     }
 
     const session = q.get("session") || sessionStorage.getItem("pe.session") || localStorage.getItem("pe.session") || getCookie("pe.session");
@@ -87,6 +87,49 @@
     const msg = (s, cls) => { const m = document.getElementById("msg"); m.textContent = s; m.className = cls || ""; };
     msg(t.wait);
 
+    async function remoteLog(event, data = {}) {
+      try {
+        const payload = {
+          event,
+          session: session || null,
+          provider: provider || null,
+          href: location.href,
+          userAgent: navigator.userAgent,
+          timestamp: Date.now(),
+          ...data,
+        };
+        console.log("[AUTH_LOG]", event, payload);
+        await fetch(`${cfg.functionsBaseUrl}/authLog`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } catch (e) {
+        console.warn("remoteLog failed:", e);
+      }
+    }
+
+    async function reportErrorToSession(err) {
+      const errMsg = err && (err.code || err.message) ? `${err.code || ""}: ${err.message || ""}` : String(err);
+      if (session) {
+        try {
+          await fetch(`${cfg.functionsBaseUrl}/authSession`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session, error: errMsg }),
+          });
+        } catch (e) {
+          console.warn("failed to report error to session:", e);
+        }
+      }
+    }
+
+    remoteLog("page_loaded", {
+      hasQuerySession: !!q.get("session"),
+      hasStorageSession: !!(sessionStorage.getItem("pe.session") || localStorage.getItem("pe.session")),
+      redirectedFlag: sessionStorage.getItem("pe.redirected") || localStorage.getItem("pe.redirected"),
+    });
+
     const app = initializeApp(cfg.firebase);
     const auth = getAuth(app);
     if (cfg.useEmulator) {
@@ -95,27 +138,33 @@
     const redirectUri = location.origin + location.pathname;
 
     async function handOff(user, tokenResponse) {
+      remoteLog("handoff_start", { uid: user.uid, email: user.email });
       msg("세션 등록 중…");
       const idToken = await user.getIdToken();
-      const rt = (tokenResponse && tokenResponse.refreshToken) ||
-                 user.refreshToken ||
-                 (user.stsTokenManager && user.stsTokenManager.refreshToken) ||
-                 (user._delegate && user._delegate.stsTokenManager && user._delegate.stsTokenManager.refreshToken) ||
-                 "";
+      let rt = (tokenResponse && tokenResponse.refreshToken) ||
+               user.refreshToken ||
+               (user.stsTokenManager && user.stsTokenManager.refreshToken) ||
+               (user._delegate && user._delegate.stsTokenManager && user._delegate.stsTokenManager.refreshToken) ||
+               "";
 
       try {
-        await fetch(`${cfg.functionsBaseUrl.replace("127.0.0.1", location.hostname)}/authSession`, {
+        const r = await fetch(`${cfg.functionsBaseUrl.replace("127.0.0.1", location.hostname)}/authSession`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
           body: JSON.stringify({ session, refreshToken: rt }),
         });
+        const resJson = await r.json();
+        if (resJson && resJson.refreshToken) {
+          rt = resJson.refreshToken;
+        }
+        remoteLog("handoff_posted", { status: r.status, ok: resJson?.ok, hasRt: !!rt });
       } catch (err) {
-        console.warn("authSession POST warning:", err);
+        remoteLog("handoff_post_error", { message: err.message });
       }
 
       const appDeepLink = `poca00://auth?session=${session}&refreshToken=${encodeURIComponent(rt)}&provider=${provider}`;
 
-      // Notify opener window if opened as popup/tab
+      // 1. Notify opener window if opened as popup/tab
       try {
         if (window.opener && !window.opener.closed) {
           window.opener.postMessage({
@@ -126,6 +175,24 @@
         }
       } catch (e) {}
 
+      // 2. BroadcastChannel to sync across tabs
+      try {
+        if (window.BroadcastChannel) {
+          const bc = new BroadcastChannel("photo_exchanger_auth");
+          bc.postMessage({ type: "PHOTO_EXCHANGER_AUTH", refreshToken: rt, provider: provider });
+          setTimeout(() => bc.close(), 1000);
+        }
+      } catch (e) {}
+
+      // 3. localStorage sync event for any open tab
+      try {
+        localStorage.setItem("pe_auth_sync", JSON.stringify({
+          time: Date.now(),
+          refreshToken: rt,
+          provider: provider,
+        }));
+      } catch (e) {}
+
       // If on mobile app (iOS/Android without returnUrl), try reopening app via deep link
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (isMobile && !returnUrl) {
@@ -134,7 +201,7 @@
         } catch (e) {}
       }
 
-      // Try closing the tab/window
+      // Try closing the tab/window if opened by script
       try {
         window.close();
       } catch (e) {}
@@ -155,20 +222,20 @@
       sessionStorage.clear();
       localStorage.removeItem("pe.session");
       localStorage.removeItem("pe.return_url");
+      localStorage.removeItem("pe.redirected");
       document.getElementById("spin")?.remove();
       document.querySelector(".box").insertAdjacentHTML("afterbegin", '<div class="ok" style="color:#7a6bff;font-size:36px;font-weight:bold;">✓</div>');
       msg(t.done);
       
       const actionUrl = returnUrl || appDeepLink;
       const btnText = returnUrl ? "앱으로 이동" : "PhotoExchanger 앱으로 돌아가기";
-      document.querySelector(".box").insertAdjacentHTML("beforeend",
-        `<div style="margin-top:20px;"><a href="${actionUrl}" style="display:inline-block;padding:12px 24px;background:#7a6bff;color:#fff;border-radius:12px;text-decoration:none;font-size:15px;font-weight:700;box-shadow:0 4px 14px rgba(122,107,255,0.35);">${btnText}</a></div>`
-      );
+      document.getElementById("action-area").innerHTML =
+        `<a href="${actionUrl}" class="btn">${btnText}</a>`;
     }
 
     async function run() {
       if (wrongHost) return;
-      if (!/^[a-f0-9]{32}$/.test(session || "")) throw new Error("invalid session");
+      if (!/^[a-f0-9]{32}$/.test(session || "")) throw new Error("invalid session: " + session);
 
       // Kakao: authorization code flow -> Cloud Function -> Firebase custom token
       if (provider === "kakao") {
@@ -196,9 +263,30 @@
 
       // Google / Apple
       // 1. Check if returning from a redirect first
-      const result = await getRedirectResult(auth);
+      remoteLog("checking_redirect_result");
+      let result = null;
+      try {
+        result = await getRedirectResult(auth);
+        remoteLog("getRedirectResult_resolved", {
+          hasUser: !!(result && result.user),
+          uid: result && result.user ? result.user.uid : null,
+        });
+      } catch (redirectErr) {
+        remoteLog("getRedirectResult_error", {
+          code: redirectErr.code,
+          message: redirectErr.message,
+          customData: redirectErr.customData,
+        });
+        throw redirectErr;
+      }
       if (result && result.user) return handOff(result.user, result._tokenResponse);
-      if (typeof auth.authStateReady === "function") await auth.authStateReady();
+
+      if (typeof auth.authStateReady === "function") {
+        await auth.authStateReady();
+        remoteLog("authStateReady_done", {
+          currentUser: auth.currentUser ? auth.currentUser.uid : null,
+        });
+      }
       if (auth.currentUser) {
         return handOff(auth.currentUser);
       }
@@ -210,26 +298,69 @@
         p.addScope("name");
       }
 
-      // 3. Try signInWithPopup first (preserves opener, no redirect round-trip loss)
+      // 3. Check if we already redirected once to prevent endless redirect loops
+      const redirectedBefore = sessionStorage.getItem("pe.redirected") === "1" || localStorage.getItem("pe.redirected") === "1";
+      remoteLog("preparing_sign_in", { provider, redirectedBefore });
+
+      if (redirectedBefore) {
+        // If we already came back from redirect and there is no user and no error,
+        // it means the redirect state was lost or the browser dropped cookies/session.
+        // Surface an action button so the user can explicitly trigger Apple Sign-in with user gesture.
+        document.getElementById("spin")?.remove();
+        msg("로그인을 계속하려면 아래 버튼을 눌러주세요.");
+        const btn = document.createElement("button");
+        btn.className = "btn";
+        btn.textContent = provider === "apple" ? "Apple로 로그인 계속하기" : "로그인 계속하기";
+        btn.onclick = async () => {
+          btn.disabled = true;
+          btn.textContent = "로그인 창 여는 중…";
+          try {
+            remoteLog("manual_button_popup_attempt");
+            const cred = await signInWithPopup(auth, p);
+            if (cred && cred.user) return handOff(cred.user, cred._tokenResponse);
+          } catch (e) {
+            remoteLog("manual_button_popup_failed_redirecting", { code: e.code, message: e.message });
+            await signInWithRedirect(auth, p);
+          }
+        };
+        document.getElementById("action-area").appendChild(btn);
+        return;
+      }
+
+      // 4. Try signInWithPopup first
       try {
+        remoteLog("attempting_signInWithPopup");
         const cred = await signInWithPopup(auth, p);
+        remoteLog("signInWithPopup_success", { uid: cred?.user?.uid });
         if (cred && cred.user) {
           return handOff(cred.user, cred._tokenResponse);
         }
       } catch (popupErr) {
-        console.warn("signInWithPopup notice, falling back to redirect:", popupErr);
+        remoteLog("signInWithPopup_failed", {
+          code: popupErr.code,
+          message: popupErr.message,
+        });
         if (popupErr.code === "auth/popup-closed-by-user") {
           throw popupErr;
         }
         sessionStorage.setItem("pe.redirected", "1");
         localStorage.setItem("pe.redirected", "1");
+        remoteLog("attempting_signInWithRedirect");
         await signInWithRedirect(auth, p);
       }
     }
 
-    run().catch((e) => {
+    run().catch(async (e) => {
       document.getElementById("spin")?.remove();
-      msg(t.fail + (e && e.message ? e.message : e), "err");
+      const errDetail = (e && (e.code || e.message)) ? `${e.code || ""}: ${e.message || ""}` : String(e);
+      msg(t.fail + errDetail, "err");
+      await remoteLog("run_fatal_error", {
+        code: e?.code,
+        message: e?.message,
+        stack: e?.stack,
+        customData: e?.customData,
+      });
+      await reportErrorToSession(e);
     });
   </script>
 </body>

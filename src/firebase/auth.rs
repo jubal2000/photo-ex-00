@@ -92,14 +92,17 @@ pub fn auth_url(provider: Provider, lang: &str, session_id: &str) -> String {
     base
 }
 
-/// Polls authSession until the hosted page hands back a token (up to ~6 min).
+/// Polls authSession until the hosted page hands back a token (up to ~2 min).
 /// Call this inside `spawn` after `open_url` has already been called synchronously.
 pub async fn poll_session(session_id: &str, provider: Provider) -> Result<Session, FbError> {
     let poll = format!("{}/authSession?session={}", config::functions_base(), session_id);
-    for _ in 0..180 {
+    for _ in 0..60 {
         crate::platform::sleep_ms(2000).await;
         match http::get_json(&poll, None).await {
             Ok(v) => {
+                if let Some(err) = v.get("error").and_then(|x| x.as_str()) {
+                    return Err(FbError::Other(format!("auth error: {}", err)));
+                }
                 if let Some(rt) = v.get("refreshToken").and_then(|x| x.as_str()) {
                     return refresh(rt, provider.key()).await;
                 }

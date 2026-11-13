@@ -490,57 +490,6 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                     rowM.addEventListener('touchmove', onRowScroll, {{ passive: true }});
                 }}
                 window.onresize = updateCurves;
-
-                // Lock screen viewport on Trade Screen: prevent pinch-zoom, gesture zoom, double-tap zoom, and rubberband horizontal movement
-                const tradeRoot = document.getElementById('trade-page-root');
-                if (tradeRoot && !tradeRoot.__peLockAttached) {{
-                    tradeRoot.__peLockAttached = true;
-
-                    // 1. Gesture events (iOS WebKit zoom)
-                    tradeRoot.addEventListener('gesturestart', function(e) {{ e.preventDefault(); }}, {{ passive: false }});
-                    tradeRoot.addEventListener('gesturechange', function(e) {{ e.preventDefault(); }}, {{ passive: false }});
-                    tradeRoot.addEventListener('gestureend', function(e) {{ e.preventDefault(); }}, {{ passive: false }});
-
-                    // 2. Prevent multi-touch pinch zooming
-                    tradeRoot.addEventListener('touchstart', function(e) {{
-                        if (e.touches && e.touches.length > 1) {{
-                            e.preventDefault();
-                        }}
-                    }}, {{ passive: false }});
-
-                    tradeRoot.addEventListener('touchmove', function(e) {{
-                        if (e.touches && e.touches.length > 1) {{
-                            e.preventDefault();
-                        }}
-                    }}, {{ passive: false }});
-
-                    // 3. Prevent double-tap zooming
-                    let lastTap = 0;
-                    tradeRoot.addEventListener('touchend', function(e) {{
-                        const now = Date.now();
-                        if (now - lastTap < 300) {{
-                            const tag = (e.target && e.target.tagName) || '';
-                            if (tag !== 'BUTTON' && tag !== 'INPUT') {{
-                                e.preventDefault();
-                            }}
-                        }}
-                        lastTap = now;
-                    }}, {{ passive: false }});
-
-                    // 4. Prevent trackpad/mouse pinch-to-zoom
-                    tradeRoot.addEventListener('wheel', function(e) {{
-                        if (e.ctrlKey) {{
-                            e.preventDefault();
-                        }}
-                    }}, {{ passive: false }});
-
-                    // 5. Ensure parent container (.content) doesn't horizontally scroll or rubberband
-                    const parentContent = tradeRoot.closest('.content');
-                    if (parentContent) {{
-                        parentContent.style.overflowX = 'hidden';
-                        parentContent.style.overscrollBehaviorX = 'none';
-                    }}
-                }}
             }})();
             "#
         );
@@ -548,7 +497,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
     });
 
     rsx! {
-        div { class: "page trade-page", id: "trade-page-root",
+        div { class: "page trade-page",
             // Partner Header Info
             div { class: "trade-partner-bar",
                 Avatar { url: partner.photo_url.clone(), size: 44 }

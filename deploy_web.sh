@@ -3,6 +3,9 @@ set -e
 
 set -a && source .env && set +a
 
+echo "▶ Cleaning old web build..."
+rm -rf target/dx/photo_exchanger/release/web/public
+
 echo "▶ Building web (release)..."
 dx build --platform web --release
 

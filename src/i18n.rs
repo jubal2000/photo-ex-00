@@ -139,7 +139,7 @@ strings! {
     "unowned" => ["미보유", "Unowned", "未所持", "未拥有", "No poseída"],
     "crop_image" => ["이미지 자르기", "Crop image", "画像を切り抜く", "裁剪图片", "Recortar imagen"],
     "crop_zoom" => ["확대 / 축소", "Zoom", "拡大 / 縮小", "缩放", "Zoom"],
-    "crop_guide" => ["드래그하여 원하는 위치로 이동하세요", "Drag to reposition", "ドラッグして位置を調整", "拖动调整位置", "Arrastra para ajustar"],
+    "crop_guide" => ["드래그로 이동 · 핀치/슬라이드로 확대 축소", "Drag to move · Pinch/Slide to zoom", "ドラッグで移動・ピンチ/スライドで拡大縮小", "拖动移动 · 双指/滑动缩放", "Arrastra para mover · Pellizca/Desliza para zoom"],
     "crop_apply" => ["자르기 및 적용", "Crop & Apply", "切り抜いて適用", "裁剪并应用", "Recortar y aplicar"],
     "apply_original" => ["그대로 적용", "Apply original", "そのまま適用", "直接应用", "Aplicar original"],
     "uploading_image" => ["이미지 업로드 중...", "Uploading image...", "画像アップロード中...", "正在上传图片...", "Subiendo imagen..."],

@@ -82,6 +82,8 @@ pub fn ImageCropperModal(
     let mut nat_h = use_signal(|| 0.0f64);
     let mut is_dragging = use_signal(|| false);
     let mut last_mouse = use_signal(|| (0.0f64, 0.0f64));
+    let mut pinch_start_dist = use_signal(|| None::<f64>);
+    let mut pinch_start_zoom = use_signal(|| 1.0f64);
     let mut is_processing = use_signal(|| false);
 
     let (view_w, view_h, mask_class) = match shape {
@@ -410,15 +412,47 @@ pub fn ImageCropperModal(
                         },
                         onmouseup: move |_| is_dragging.set(false),
                         onmouseleave: move |_| is_dragging.set(false),
+                        onwheel: move |e| {
+                            e.prevent_default();
+                            let dy = e.delta().strip_units().y;
+                            let step = -dy * 0.002;
+                            let new_z = (zoom() + step).clamp(min_limit, 3.0);
+                            zoom.set(new_z);
+                        },
                         ontouchstart: move |e| {
-                            if let Some(t) = e.touches().first() {
+                            let touches = e.touches();
+                            if touches.len() >= 2 {
+                                let t1 = &touches[0];
+                                let t2 = &touches[1];
+                                let dx = t1.client_coordinates().x - t2.client_coordinates().x;
+                                let dy = t1.client_coordinates().y - t2.client_coordinates().y;
+                                let dist = (dx * dx + dy * dy).sqrt();
+                                pinch_start_dist.set(Some(dist));
+                                pinch_start_zoom.set(zoom());
+                                is_dragging.set(false);
+                            } else if let Some(t) = touches.first() {
                                 is_dragging.set(true);
                                 last_mouse.set((t.client_coordinates().x, t.client_coordinates().y));
+                                pinch_start_dist.set(None);
                             }
                         },
                         ontouchmove: move |e| {
-                            if is_dragging() {
-                                if let Some(t) = e.touches().first() {
+                            let touches = e.touches();
+                            if touches.len() >= 2 {
+                                if let Some(start_dist) = pinch_start_dist() {
+                                    if start_dist > 5.0 {
+                                        let t1 = &touches[0];
+                                        let t2 = &touches[1];
+                                        let dx = t1.client_coordinates().x - t2.client_coordinates().x;
+                                        let dy = t1.client_coordinates().y - t2.client_coordinates().y;
+                                        let curr_dist = (dx * dx + dy * dy).sqrt();
+                                        let factor = curr_dist / start_dist;
+                                        let new_z = (pinch_start_zoom() * factor).clamp(min_limit, 3.0);
+                                        zoom.set(new_z);
+                                    }
+                                }
+                            } else if is_dragging() && touches.len() == 1 {
+                                if let Some(t) = touches.first() {
                                     let (lx, ly) = last_mouse();
                                     let cx = t.client_coordinates().x;
                                     let cy = t.client_coordinates().y;
@@ -428,7 +462,24 @@ pub fn ImageCropperModal(
                                 }
                             }
                         },
-                        ontouchend: move |_| is_dragging.set(false),
+                        ontouchend: move |e| {
+                            let touches = e.touches();
+                            if touches.len() < 2 {
+                                pinch_start_dist.set(None);
+                            }
+                            if touches.is_empty() {
+                                is_dragging.set(false);
+                            } else if touches.len() == 1 {
+                                if let Some(t) = touches.first() {
+                                    is_dragging.set(true);
+                                    last_mouse.set((t.client_coordinates().x, t.client_coordinates().y));
+                                }
+                            }
+                        },
+                        ontouchcancel: move |_| {
+                            is_dragging.set(false);
+                            pinch_start_dist.set(None);
+                        },
 
                         // The underlying image in DOM
                         img {

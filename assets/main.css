@@ -2188,6 +2188,7 @@ input.input.input-error {
   justify-content: center;
   user-select: none;
   -webkit-user-select: none;
+  touch-action: none;
   cursor: grab;
 }
 .crop-viewport:active {
@@ -2238,23 +2239,33 @@ input.input.input-error {
   white-space: nowrap;
 }
 .btn-zoom-step {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text);
-  font-size: 16px;
+  font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  line-height: 1;
+  padding: 0;
+}
+.btn-zoom-step:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.16);
 }
 .crop-zoom-bar input[type=range] {
   flex: 1;
   accent-color: var(--primary);
-  height: 6px;
-  border-radius: 3px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+  cursor: pointer;
 }
 .crop-modal-actions {
   display: flex;

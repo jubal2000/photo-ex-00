@@ -62,6 +62,38 @@ pub fn Header() -> Element {
                         img { src: LOGO, alt: "logo", class: "logo" }
                         span { class: "logo-text", "PhotoEx" }
                     }
+                } else if let Screen::ArtistDetail { ref artist_id, .. } = current_screen {
+                    {
+                        let catalog = app.catalog.read();
+                        let maybe_artist = catalog.artist(artist_id);
+                        let a_name = maybe_artist.map(|a| a.name.clone()).unwrap_or_else(|| catalog.artist_name(artist_id));
+                        let a_img = maybe_artist.map(|a| a.image_url.clone()).unwrap_or_default();
+                        let a_color = maybe_artist.map(|a| a.color.clone()).unwrap_or_default();
+                        let aid_for_edit = artist_id.clone();
+                        rsx! {
+                            div { class: "header-title-box header-artist-box",
+                                ArtistAvatar {
+                                    url: a_img,
+                                    color: a_color,
+                                    name: a_name.clone(),
+                                    size: 28,
+                                }
+                                span { class: "header-page-title", "{a_name}" }
+                                if *app.edit_mode.read() {
+                                    button {
+                                        class: "btn-icon-subtle edit-title-btn-small",
+                                        title: app.tr("edit_artist"),
+                                        aria_label: app.tr("edit_artist"),
+                                        onclick: move |_| app.push(Screen::EditArtist { artist_id: aid_for_edit.clone() }),
+                                        svg { width: "13", height: "13", view_box: "0 0 24 24", fill: "none", stroke: "currentColor", stroke_width: "2", stroke_linecap: "round", stroke_linejoin: "round",
+                                            path { d: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" }
+                                            path { d: "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 } else {
                     div { class: "header-title-box",
                         span { class: "header-page-title", "{title}" }

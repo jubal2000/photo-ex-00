@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 
 use crate::api;
 use crate::app::reload_holdings;
-use crate::components::{ArtistAvatar, CardThumb};
+use crate::components::CardThumb;
 use crate::models::Card;
 use crate::state::*;
 
@@ -17,11 +17,6 @@ pub fn ArtistDetail(artist_id: String, category_id: Option<String>) -> Element {
 
     let catalog = app.catalog.read().clone();
     let maybe_artist = catalog.artist(&artist_id);
-    let artist_name = maybe_artist
-        .map(|a| a.name.clone())
-        .unwrap_or_else(|| catalog.artist_name(&artist_id));
-    let artist_img = maybe_artist.map(|a| a.image_url.clone()).unwrap_or_default();
-    let artist_color = maybe_artist.map(|a| a.color.clone()).unwrap_or_default();
     let artist_desc = maybe_artist.map(|a| a.description.clone()).unwrap_or_default();
 
     let my_holdings: HashMap<String, u32> = app
@@ -101,38 +96,12 @@ pub fn ArtistDetail(artist_id: String, category_id: Option<String>) -> Element {
     };
 
     let is_empty = tree.is_empty();
-    let aid_for_edit = artist_id.clone();
 
     rsx! {
         div { class: "page artist-detail",
             div { class: "artist-header",
-                div { class: "artist-profile-box",
-                    ArtistAvatar {
-                        url: artist_img,
-                        color: artist_color,
-                        name: artist_name.clone(),
-                        size: 52,
-                    }
-                    div { class: "artist-profile-info",
-                        div { class: "artist-profile-title-row",
-                            h2 { class: "page-title", "{artist_name}" }
-                            if *app.edit_mode.read() {
-                                button {
-                                    class: "btn-icon-subtle edit-title-btn",
-                                    title: app.tr("edit_artist"),
-                                    aria_label: app.tr("edit_artist"),
-                                    onclick: move |_| app.push(Screen::EditArtist { artist_id: aid_for_edit.clone() }),
-                                    svg { width: "15", height: "15", view_box: "0 0 24 24", fill: "none", stroke: "currentColor", stroke_width: "2", stroke_linecap: "round", stroke_linejoin: "round",
-                                        path { d: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" }
-                                        path { d: "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" }
-                                    }
-                                }
-                            }
-                        }
-                        if !artist_desc.is_empty() {
-                            div { class: "artist-header-desc muted small", "{artist_desc}" }
-                        }
-                    }
+                if !artist_desc.is_empty() {
+                    div { class: "artist-header-desc muted small", "{artist_desc}" }
                 }
                 if !available_categories.is_empty() {
                     div { class: "chips artist-category-chips",

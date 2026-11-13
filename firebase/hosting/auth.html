@@ -27,8 +27,16 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
     import {
       getAuth, connectAuthEmulator, GoogleAuthProvider, OAuthProvider,
-      signInWithRedirect, getRedirectResult, signInWithCustomToken,
+      signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCustomToken,
     } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+    function getCookie(name) {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? decodeURIComponent(match[2]) : null;
+    }
+    function setCookie(name, val) {
+      document.cookie = name + '=' + encodeURIComponent(val) + '; path=/; max-age=1800; SameSite=Lax';
+    }
 
     const cfg = window.PHOTO_EXCHANGER_CONFIG;
     const L = {
@@ -45,32 +53,40 @@
       // so browsers do not block third-party storage during signInWithRedirect.
       location.replace(`https://${cfg.firebase.authDomain}${location.pathname}${location.search}`);
     } else if (q.get("session")) {
-      // Remember the request across the OAuth redirect round-trip in both storages.
+      // Remember the request across the OAuth redirect round-trip in all storages.
       const sess = q.get("session");
       const prov = q.get("provider") || "google";
       const lng = q.get("lang") || "ko";
       const ret = q.get("return_url") || "";
 
       sessionStorage.setItem("pe.session", sess);
-      sessionStorage.setItem("pe.provider", prov);
-      sessionStorage.setItem("pe.lang", lng);
-      sessionStorage.removeItem("pe.redirected");
       localStorage.setItem("pe.session", sess);
+      setCookie("pe.session", sess);
+
+      sessionStorage.setItem("pe.provider", prov);
       localStorage.setItem("pe.provider", prov);
+      setCookie("pe.provider", prov);
+
+      sessionStorage.setItem("pe.lang", lng);
       localStorage.setItem("pe.lang", lng);
+      setCookie("pe.lang", lng);
+
       if (ret) {
         sessionStorage.setItem("pe.return_url", ret);
         localStorage.setItem("pe.return_url", ret);
+        setCookie("pe.return_url", ret);
       }
+      sessionStorage.removeItem("pe.redirected");
+      localStorage.removeItem("pe.redirected");
       if (!q.get("code")) {
         history.replaceState(null, "", location.pathname);
       }
     }
 
-    const session = sessionStorage.getItem("pe.session") || localStorage.getItem("pe.session");
-    const provider = sessionStorage.getItem("pe.provider") || localStorage.getItem("pe.provider") || "google";
-    const returnUrl = sessionStorage.getItem("pe.return_url") || localStorage.getItem("pe.return_url");
-    const t = L[sessionStorage.getItem("pe.lang") || localStorage.getItem("pe.lang")] || L.ko;
+    const session = q.get("session") || sessionStorage.getItem("pe.session") || localStorage.getItem("pe.session") || getCookie("pe.session");
+    const provider = q.get("provider") || sessionStorage.getItem("pe.provider") || localStorage.getItem("pe.provider") || getCookie("pe.provider") || "google";
+    const returnUrl = q.get("return_url") || sessionStorage.getItem("pe.return_url") || localStorage.getItem("pe.return_url") || getCookie("pe.return_url");
+    const t = L[q.get("lang") || sessionStorage.getItem("pe.lang") || localStorage.getItem("pe.lang") || getCookie("pe.lang")] || L.ko;
     const msg = (s, cls) => { const m = document.getElementById("msg"); m.textContent = s; m.className = cls || ""; };
     msg(t.wait);
 
@@ -95,7 +111,7 @@
 
       const appDeepLink = `poca00://auth?session=${session}&refreshToken=${encodeURIComponent(user.refreshToken)}&provider=${provider}`;
 
-      // Notify opener window if opened as popup
+      // Notify opener window if opened as popup/tab
       try {
         if (window.opener && !window.opener.closed) {
           window.opener.postMessage({
@@ -136,7 +152,7 @@
       localStorage.removeItem("pe.session");
       localStorage.removeItem("pe.return_url");
       document.getElementById("spin")?.remove();
-      document.querySelector(".box").insertAdjacentHTML("afterbegin", '<div class="ok">✅</div>');
+      document.querySelector(".box").insertAdjacentHTML("afterbegin", '<div class="ok" style="color:#7a6bff;font-size:36px;font-weight:bold;">✓</div>');
       msg(t.done);
       
       const actionUrl = returnUrl || appDeepLink;
@@ -174,24 +190,37 @@
         return handOff(cred.user);
       }
 
-      // Google / Apple: Firebase redirect flow
+      // Google / Apple
+      // 1. Check if returning from a redirect first
       const result = await getRedirectResult(auth);
       if (result && result.user) return handOff(result.user);
       if (typeof auth.authStateReady === "function") await auth.authStateReady();
-      if (auth.currentUser && sessionStorage.getItem("pe.redirected") === "1") {
+      if (auth.currentUser) {
         return handOff(auth.currentUser);
       }
-      if (sessionStorage.getItem("pe.redirected") === "1") {
-        sessionStorage.removeItem("pe.redirected");
-        throw new Error("OAuth redirect completed without a session. Please try again.");
-      }
-      if (auth.currentUser) {
-        await auth.signOut();
-      }
-      sessionStorage.setItem("pe.redirected", "1");
+
+      // 2. Prepare provider
       const p = provider === "apple" ? new OAuthProvider("apple.com") : new GoogleAuthProvider();
-      if (provider === "apple") { p.addScope("email"); p.addScope("name"); }
-      await signInWithRedirect(auth, p);
+      if (provider === "apple") {
+        p.addScope("email");
+        p.addScope("name");
+      }
+
+      // 3. Try signInWithPopup first (preserves opener, no redirect round-trip loss)
+      try {
+        const cred = await signInWithPopup(auth, p);
+        if (cred && cred.user) {
+          return handOff(cred.user);
+        }
+      } catch (popupErr) {
+        console.warn("signInWithPopup notice, falling back to redirect:", popupErr);
+        if (popupErr.code === "auth/popup-closed-by-user") {
+          throw popupErr;
+        }
+        sessionStorage.setItem("pe.redirected", "1");
+        localStorage.setItem("pe.redirected", "1");
+        await signInWithRedirect(auth, p);
+      }
     }
 
     run().catch((e) => {

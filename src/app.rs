@@ -79,7 +79,8 @@ pub fn App() -> Element {
                                 let rt_owned = rt.to_string();
                                 spawn(async move {
                                     if let Ok(sess) = auth::refresh(&rt_owned, &prov).await {
-                                        app.on_signed_in(sess, true);
+                                        let auto = pref_bool(KEY_AUTO, true);
+                                        app.on_signed_in(sess, auto);
                                     }
                                 });
                             }

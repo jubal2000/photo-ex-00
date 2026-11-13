@@ -1,5 +1,6 @@
 //! Trades Screen: Trade Requests & Accepted Trade History with tabs.
 
+use std::rc::Rc;
 use dioxus::prelude::*;
 
 use crate::api;
@@ -26,6 +27,8 @@ pub fn TradesScreen() -> Element {
     let mut app = use_app();
     let mut current_tab = use_signal(|| TradeTab::Requests);
     let mut req_filter = use_signal(|| RequestFilter::All);
+    let mut is_processing = use_signal(|| false);
+    let mut success_trade = use_signal(|| None::<(Trade, String)>);
 
     let mut trades = use_resource(move || async move {
         let uid = app.uid();
@@ -33,22 +36,9 @@ pub fn TradesScreen() -> Element {
         api::my_trades(&tok, &uid).await.ok()
     });
 
-    let act = move |id: String, action: &'static str| {
-        spawn(async move {
-            let Ok(tok) = app.token().await else { return };
-            let res = match action {
-                "accept" => api::accept_trade(&tok, &id).await,
-                "reject" => api::set_trade_status(&tok, &id, "rejected").await,
-                _ => api::set_trade_status(&tok, &id, "cancelled").await,
-            };
-            match res {
-                Ok(_) => {
-                    trades.restart();
-                    reload_holdings(app).await;
-                }
-                Err(e) => app.show_error(&e),
-            }
-        });
+    let (inbox, outbox) = match trades.read().clone() {
+        Some(Some((i, o))) => (i, o),
+        _ => (vec![], vec![]),
     };
 
     let profiles = use_resource(move || {
@@ -66,18 +56,64 @@ pub fn TradesScreen() -> Element {
         }
     });
 
-    let (inbox, outbox) = match trades.read().clone() {
-        Some(Some((i, o))) => (i, o),
-        _ => (vec![], vec![]),
+    let names = Rc::new(profiles.read().clone().flatten().unwrap_or_default());
+    let unknown_label = app.tr("unknown_user").to_string();
+    let name_of = {
+        let names = Rc::clone(&names);
+        let unknown = unknown_label.clone();
+        move |uid: &str| -> String {
+            names.get(uid).map(|p| p.nickname.clone()).unwrap_or_else(|| unknown.clone())
+        }
     };
 
-    let names = profiles.read().clone().flatten().unwrap_or_default();
-    let name_of = |uid: &str| {
-        names
-            .get(uid)
-            .map(|p| p.nickname.clone())
-            .unwrap_or_else(|| app.tr("unknown_user").to_string())
-    };
+    let inbox_for_act = inbox.clone();
+    let name_of_for_act = name_of.clone();
+    let act = Rc::new(move |id: String, action: &'static str| {
+        let id_c = id.clone();
+        let is_accept = action == "accept";
+        let target_trade = if is_accept {
+            inbox_for_act.iter().find(|t| t.id == id).cloned()
+        } else {
+            None
+        };
+        let partner_name = if let Some(ref t) = target_trade {
+            name_of_for_act(&t.from_uid)
+        } else {
+            String::new()
+        };
+
+        spawn(async move {
+            if is_accept {
+                is_processing.set(true);
+            }
+            let Ok(tok) = app.token().await else {
+                if is_accept {
+                    is_processing.set(false);
+                }
+                return;
+            };
+            let res = match action {
+                "accept" => api::accept_trade(&tok, &id_c).await,
+                "reject" => api::set_trade_status(&tok, &id_c, "rejected").await,
+                _ => api::set_trade_status(&tok, &id_c, "cancelled").await,
+            };
+            if is_accept {
+                is_processing.set(false);
+            }
+            match res {
+                Ok(_) => {
+                    trades.restart();
+                    reload_holdings(app).await;
+                    if is_accept {
+                        if let Some(t) = target_trade {
+                            success_trade.set(Some((t, partner_name)));
+                        }
+                    }
+                }
+                Err(e) => app.show_error(&e),
+            }
+        });
+    });
 
     // Pending requests
     let pending_inbox: Vec<Trade> = inbox.iter().filter(|t| t.status == "pending").cloned().collect();
@@ -150,12 +186,18 @@ pub fn TradesScreen() -> Element {
                                 span { class: "count", "({pending_inbox.len()})" }
                             }
                             for t in pending_inbox.iter() {
-                                TradeCard {
-                                    key: "{t.id}",
-                                    trade: t.clone(),
-                                    who: name_of(&t.from_uid),
-                                    incoming: true,
-                                    on_action: move |(id, a)| act(id, a),
+                                {
+                                    let act_c = Rc::clone(&act);
+                                    let who = name_of(&t.from_uid);
+                                    rsx! {
+                                        TradeCard {
+                                            key: "{t.id}",
+                                            trade: t.clone(),
+                                            who,
+                                            incoming: true,
+                                            on_action: move |(id, a)| act_c(id, a),
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -167,12 +209,18 @@ pub fn TradesScreen() -> Element {
                                 span { class: "count", "({pending_outbox.len()})" }
                             }
                             for t in pending_outbox.iter() {
-                                TradeCard {
-                                    key: "{t.id}",
-                                    trade: t.clone(),
-                                    who: name_of(&t.to_uid),
-                                    incoming: false,
-                                    on_action: move |(id, a)| act(id, a),
+                                {
+                                    let act_c = Rc::clone(&act);
+                                    let who = name_of(&t.to_uid);
+                                    rsx! {
+                                        TradeCard {
+                                            key: "{t.id}",
+                                            trade: t.clone(),
+                                            who,
+                                            incoming: false,
+                                            on_action: move |(id, a)| act_c(id, a),
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -189,13 +237,14 @@ pub fn TradesScreen() -> Element {
                                 {
                                     let other_uid = if *inc { &t.from_uid } else { &t.to_uid };
                                     let partner_name = name_of(other_uid);
+                                    let act_c = Rc::clone(&act);
                                     rsx! {
                                         TradeCard {
                                             key: "{t.id}",
                                             trade: t.clone(),
                                             who: partner_name,
                                             incoming: *inc,
-                                            on_action: move |(id, a)| act(id, a),
+                                            on_action: move |(id, a)| act_c(id, a),
                                         }
                                     }
                                 }
@@ -203,6 +252,28 @@ pub fn TradesScreen() -> Element {
                         }
                     }
                 },
+            }
+
+            // Processing Dim Overlay
+            if is_processing() {
+                div { class: "trade-dim-overlay",
+                    div { class: "trade-dim-card",
+                        div { class: "spinner large" }
+                        p { class: "trade-dim-text", {app.tr("trade_processing")} }
+                    }
+                }
+            }
+
+            // Trade Accepted Success Modal with Celebration Confetti
+            if let Some((t, partner)) = success_trade() {
+                TradeSuccessModal {
+                    trade: t,
+                    partner,
+                    on_close: move |_| {
+                        success_trade.set(None);
+                        current_tab.set(TradeTab::Accepted);
+                    },
+                }
             }
         }
     }
@@ -312,4 +383,63 @@ fn TradeCard(
         }
     }
 }
+
+/// Modal shown when a trade is accepted, with celebration confetti burst.
+#[component]
+fn TradeSuccessModal(
+    trade: Trade,
+    partner: String,
+    on_close: EventHandler<()>,
+) -> Element {
+    let app = use_app();
+    let catalog = app.catalog.read().clone();
+    let received = &trade.offered;
+
+    rsx! {
+        div { class: "scrim", onclick: move |_| on_close.call(()) }
+        div { class: "trade-success-modal-wrap",
+            div { class: "trade-success-modal",
+                // Celebration Confetti Stage (16 particles animated via CSS)
+                div { class: "confetti-stage",
+                    for i in 0..16 {
+                        div { class: "confetti-p confetti-p-{i}", key: "{i}" }
+                    }
+                }
+
+                // Ribbon / Highlight Mark
+                div { class: "trade-success-sparkle-mark" }
+
+                h3 { class: "trade-success-title", {app.tr("trade_accepted_title")} }
+                p { class: "trade-success-desc",
+                    {app.tr("trade_accepted_desc").replace("{user}", &partner)}
+                }
+
+                // Received Cards Preview
+                div { class: "trade-success-cards-section",
+                    div { class: "trade-success-cards-label", {app.tr("trade_you_get")} }
+                    div { class: "trade-success-cards-row",
+                        for it in received.iter() {
+                            if let Some(c) = catalog.card(&it.card_id).cloned() {
+                                div { class: "trade-success-thumb-wrap", key: "{it.card_id}",
+                                    CardThumb {
+                                        card: c,
+                                        badge: Some(format!("+{}", it.qty)),
+                                        small: true,
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                button {
+                    class: "btn btn-primary block trade-success-confirm-btn",
+                    onclick: move |_| on_close.call(()),
+                    {app.tr("confirm")}
+                }
+            }
+        }
+    }
+}
+
 

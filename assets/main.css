@@ -2222,3 +2222,202 @@ textarea.input { resize: vertical; }
   font-weight: 600;
   color: var(--text-secondary, #bbb);
 }
+
+/* Trade Acceptance Processing Dim Overlay */
+.trade-dim-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2500;
+  background: rgba(8, 6, 12, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+.trade-dim-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  background: rgba(26, 20, 36, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  padding: 30px 40px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  text-align: center;
+}
+.trade-dim-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+/* Trade Acceptance Success Modal */
+.trade-success-modal-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 2400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  pointer-events: none;
+}
+.trade-success-modal {
+  position: relative;
+  pointer-events: auto;
+  width: 100%;
+  max-width: 360px;
+  background: linear-gradient(180deg, rgba(32, 24, 46, 0.98), rgba(20, 15, 30, 0.98));
+  border: 1px solid rgba(138, 122, 255, 0.35);
+  border-radius: 20px;
+  padding: 28px 24px 22px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(122, 107, 255, 0.2);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  animation: popInModal 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+@keyframes popInModal {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.trade-success-sparkle-mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary, #7a6bff), #ff70a6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(122, 107, 255, 0.6);
+  position: relative;
+}
+.trade-success-sparkle-mark::before {
+  content: "";
+  width: 18px;
+  height: 10px;
+  border: 3px solid #ffffff;
+  border-top-color: transparent;
+  border-right-color: transparent;
+  transform: rotate(-45deg) translate(2px, -2px);
+}
+
+.trade-success-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+.trade-success-desc {
+  font-size: 13px;
+  color: var(--text-secondary, #b6b1c2);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.trade-success-cards-section {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.trade-success-cards-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary, #8e7eff);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.trade-success-cards-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  justify-content: safe center;
+  overflow-x: auto;
+  max-width: 100%;
+  padding: 2px 0;
+}
+.trade-success-thumb-wrap {
+  flex-shrink: 0;
+}
+.trade-success-confirm-btn {
+  margin-top: 6px;
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 12px;
+}
+
+/* Celebration Confetti Fireworks Animation (No Emoji) */
+.confetti-stage {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+.confetti-p {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: confettiBurst 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* 16 particles with distributed angles, colors, and flight distances */
+.confetti-p-0  { background: #ffd166; --dx:  0px;  --dy: -75px; --dr: 180deg; animation-delay: 0.02s; }
+.confetti-p-1  { background: #ff70a6; --dx:  30px; --dy: -70px; --dr: 220deg; animation-delay: 0.05s; }
+.confetti-p-2  { background: #8e7eff; --dx:  60px; --dy: -50px; --dr: 140deg; animation-delay: 0.03s; }
+.confetti-p-3  { background: #06d6a0; --dx:  75px; --dy: -20px; --dr: 300deg; animation-delay: 0.07s; }
+.confetti-p-4  { background: #f77f00; --dx:  70px; --dy:  15px; --dr: 200deg; animation-delay: 0.04s; }
+.confetti-p-5  { background: #118ab2; --dx:  55px; --dy:  45px; --dr: 260deg; animation-delay: 0.06s; }
+.confetti-p-6  { background: #ffd166; --dx:  25px; --dy:  65px; --dr: 190deg; animation-delay: 0.01s; border-radius: 50%; }
+.confetti-p-7  { background: #ff70a6; --dx:   0px; --dy:  70px; --dr: 360deg; animation-delay: 0.05s; width: 5px; height: 9px; }
+.confetti-p-8  { background: #8e7eff; --dx: -25px; --dy:  65px; --dr: 150deg; animation-delay: 0.03s; }
+.confetti-p-9  { background: #06d6a0; --dx: -55px; --dy:  45px; --dr: 280deg; animation-delay: 0.08s; border-radius: 50%; }
+.confetti-p-10 { background: #f77f00; --dx: -70px; --dy:  15px; --dr: 170deg; animation-delay: 0.02s; width: 9px; height: 5px; }
+.confetti-p-11 { background: #118ab2; --dx: -75px; --dy: -20px; --dr: 320deg; animation-delay: 0.06s; }
+.confetti-p-12 { background: #ffd166; --dx: -60px; --dy: -50px; --dr: 210deg; animation-delay: 0.04s; }
+.confetti-p-13 { background: #ff70a6; --dx: -30px; --dy: -70px; --dr: 130deg; animation-delay: 0.07s; width: 6px; height: 6px; }
+.confetti-p-14 { background: #ffffff; --dx:  15px; --dy: -85px; --dr: 240deg; animation-delay: 0.05s; border-radius: 50%; }
+.confetti-p-15 { background: #8e7eff; --dx: -15px; --dy: -85px; --dr: 190deg; animation-delay: 0.03s; }
+
+@keyframes confettiBurst {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0) rotate(0deg);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(calc(var(--dx) * 0.4), calc(var(--dy) * 0.4)) scale(1.3) rotate(calc(var(--dr) * 0.3));
+  }
+  60% {
+    opacity: 0.9;
+    transform: translate(var(--dx), var(--dy)) scale(1) rotate(var(--dr));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--dx) * 1.15), calc(var(--dy) * 1.15 + 15px)) scale(0.6) rotate(calc(var(--dr) * 1.3));
+  }
+}
+

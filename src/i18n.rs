@@ -222,6 +222,10 @@ strings! {
     "trades_empty_accepted" => ["수락된 교환 내역이 없어요", "No completed trades yet", "成立した交換履歴はありません", "暂无已完成的交换记录", "No hay intercambios completados"],
     "trade_you_get" => ["받을 카드", "You receive", "受け取るカード", "获得卡片", "Recibes"],
     "trade_you_give" => ["줄 카드", "You give", "渡すカード", "给出卡片", "Entregas"],
+    "trade_accepted_title" => ["교환이 완료되었습니다!", "Trade Completed!", "交換が成立しました！", "交换已成功！", "¡Intercambio completado!"],
+    "trade_accepted_desc" => ["{user}님과의 교환이 성공적으로 성사되었습니다.", "The trade with {user} has been successfully completed.", "{user}様との交換が成立しました。", "与 {user} 的交换已顺利完成。", "El intercambio con {user} se ha realizado con éxito."],
+    "trade_processing" => ["교환 처리 중...", "Processing trade...", "交換処理中...", "正在处理交换...", "Procesando intercambio..."],
+    "confirm" => ["확인", "OK", "確認", "确认", "Confirmar"],
 }
 
 /// Simple `{name}` placeholder substitution.

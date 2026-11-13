@@ -78,9 +78,6 @@
       }
       sessionStorage.removeItem("pe.redirected");
       localStorage.removeItem("pe.redirected");
-      if (!q.get("code")) {
-        history.replaceState(null, "", location.pathname);
-      }
     }
 
     const session = q.get("session") || sessionStorage.getItem("pe.session") || localStorage.getItem("pe.session") || getCookie("pe.session");
@@ -97,26 +94,33 @@
     }
     const redirectUri = location.origin + location.pathname;
 
-    async function handOff(user) {
+    async function handOff(user, tokenResponse) {
+      msg("세션 등록 중…");
       const idToken = await user.getIdToken();
+      const rt = (tokenResponse && tokenResponse.refreshToken) ||
+                 user.refreshToken ||
+                 (user.stsTokenManager && user.stsTokenManager.refreshToken) ||
+                 (user._delegate && user._delegate.stsTokenManager && user._delegate.stsTokenManager.refreshToken) ||
+                 "";
+
       try {
         await fetch(`${cfg.functionsBaseUrl.replace("127.0.0.1", location.hostname)}/authSession`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-          body: JSON.stringify({ session, refreshToken: user.refreshToken }),
+          body: JSON.stringify({ session, refreshToken: rt }),
         });
       } catch (err) {
         console.warn("authSession POST warning:", err);
       }
 
-      const appDeepLink = `poca00://auth?session=${session}&refreshToken=${encodeURIComponent(user.refreshToken)}&provider=${provider}`;
+      const appDeepLink = `poca00://auth?session=${session}&refreshToken=${encodeURIComponent(rt)}&provider=${provider}`;
 
       // Notify opener window if opened as popup/tab
       try {
         if (window.opener && !window.opener.closed) {
           window.opener.postMessage({
             type: "PHOTO_EXCHANGER_AUTH",
-            refreshToken: user.refreshToken,
+            refreshToken: rt,
             provider: provider,
           }, "*");
         }
@@ -135,11 +139,11 @@
         window.close();
       } catch (e) {}
 
-      // If not closed and returnUrl exists, automatically navigate back to the web app!
+      // If not closed and returnUrl exists, navigate back to the web app
       if (returnUrl) {
         try {
           const u = new URL(returnUrl);
-          u.searchParams.set("refreshToken", user.refreshToken);
+          if (rt) u.searchParams.set("refreshToken", rt);
           u.searchParams.set("provider", provider);
           location.replace(u.toString());
           return;
@@ -193,7 +197,7 @@
       // Google / Apple
       // 1. Check if returning from a redirect first
       const result = await getRedirectResult(auth);
-      if (result && result.user) return handOff(result.user);
+      if (result && result.user) return handOff(result.user, result._tokenResponse);
       if (typeof auth.authStateReady === "function") await auth.authStateReady();
       if (auth.currentUser) {
         return handOff(auth.currentUser);
@@ -210,7 +214,7 @@
       try {
         const cred = await signInWithPopup(auth, p);
         if (cred && cred.user) {
-          return handOff(cred.user);
+          return handOff(cred.user, cred._tokenResponse);
         }
       } catch (popupErr) {
         console.warn("signInWithPopup notice, falling back to redirect:", popupErr);

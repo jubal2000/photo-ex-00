@@ -28,6 +28,8 @@ function fail(res, e) {
   res.status(code).json({ error: { message: e.message } });
 }
 
+const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY || "AIzaSyDtz9C_TCkmrr3lWYP6fOcYQUIgtrd6k14";
+
 /**
  * POST {session, refreshToken} with Bearer idToken  (from the hosted auth page)
  * GET  ?session=<id>                                 (polled by the app; single use)
@@ -37,14 +39,40 @@ exports.authSession = onRequest({ cors: true }, async (req, res) => {
     if (req.method === "POST") {
       const decoded = await verify(req);
       const { session, refreshToken } = req.body || {};
-      if (!SESSION_RE.test(session || "") || !refreshToken) {
-        return res.status(400).json({ error: { message: "bad request" } });
+      if (!SESSION_RE.test(session || "")) {
+        console.warn("authSession POST: invalid session id", session);
+        return res.status(400).json({ error: { message: "bad request: invalid session" } });
       }
+
+      let finalRefreshToken = refreshToken;
+      if (!finalRefreshToken) {
+        console.log("authSession POST: refreshToken missing from client, minting via custom token for uid:", decoded.uid);
+        try {
+          const customToken = await admin.auth().createCustomToken(decoded.uid);
+          const stsRes = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${FIREBASE_API_KEY}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: customToken, returnSecureToken: true }),
+          });
+          const stsData = await stsRes.json();
+          finalRefreshToken = stsData.refreshToken;
+          console.log("authSession POST: minted new refreshToken successfully");
+        } catch (e) {
+          console.error("authSession POST: failed to mint custom token:", e);
+        }
+      }
+
+      if (!finalRefreshToken) {
+        console.warn("authSession POST: failed to acquire refreshToken for uid:", decoded.uid);
+        return res.status(400).json({ error: { message: "failed to acquire refresh token" } });
+      }
+
       await db.collection("authSessions").doc(session).set({
         uid: decoded.uid,
-        refreshToken,
+        refreshToken: finalRefreshToken,
         expiresAt: Date.now() + SESSION_TTL_MS,
       });
+      console.log(`authSession POST: saved session ${session} for uid ${decoded.uid}`);
       return res.json({ ok: true });
     }
     if (req.method === "GET") {
@@ -59,10 +87,12 @@ exports.authSession = onRequest({ cors: true }, async (req, res) => {
         return d.expiresAt > Date.now() ? d : null;
       });
       if (!out) return res.status(404).json({ error: { message: "pending" } });
+      console.log(`authSession GET: hand-off session ${session} to polling client`);
       return res.json({ refreshToken: out.refreshToken });
     }
     res.status(405).end();
   } catch (e) {
+    console.error("authSession error:", e);
     fail(res, e);
   }
 });

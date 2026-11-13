@@ -1652,6 +1652,43 @@ textarea.input { resize: vertical; }
 .card-actions { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
 .edit-btn { font-size: 11px; padding: 4px 8px; color: var(--muted); }
 .save-btn { margin-top: 8px; }
+.edit-card-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.edit-card-actions-row .save-btn {
+  margin-top: 0;
+  flex: 1;
+}
+.delete-card-icon-btn {
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-color: rgba(255, 73, 92, 0.4);
+  color: #ff6b7d;
+  background: rgba(255, 73, 92, 0.08);
+  border-radius: 12px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.delete-card-icon-btn:hover {
+  background: rgba(255, 73, 92, 0.22);
+  border-color: #ff495c;
+  color: #ffffff;
+}
+.btn-primary.danger-btn {
+  background: #ff495c;
+  border-color: #ff495c;
+  color: #ffffff;
+}
+.btn-primary.danger-btn:hover {
+  background: #e03b4d;
+}
 
 /* settings */
 .lang-list { display: flex; flex-wrap: wrap; gap: 8px; }

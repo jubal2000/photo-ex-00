@@ -42,6 +42,7 @@ pub fn EditCard(card_id: String) -> Element {
     let mut busy = use_signal(|| false);
     let mut crop_img = use_signal(|| None::<String>);
     let mut upload_progress = use_signal(|| None::<u8>);
+    let mut confirm_delete = use_signal(|| false);
 
     let on_image = move |e: Event<FormData>| {
         spawn(async move {
@@ -98,6 +99,27 @@ pub fn EditCard(card_id: String) -> Element {
                 Ok(_) => {
                     reload_catalog(app).await;
                     app.show_toast(app.tr("saved"));
+                    app.back();
+                }
+                Err(e) => app.show_error(&e),
+            }
+            busy.set(false);
+        });
+    };
+
+    let cid_del = card_id.clone();
+    let delete_action = move || {
+        let cid = cid_del.clone();
+        spawn(async move {
+            busy.set(true);
+            let res = match app.token().await {
+                Ok(tok) => api::delete_card(&tok, &cid).await,
+                Err(e) => Err(e),
+            };
+            match res {
+                Ok(_) => {
+                    reload_catalog(app).await;
+                    app.show_toast(app.tr("deleted"));
                     app.back();
                 }
                 Err(e) => app.show_error(&e),
@@ -236,12 +258,54 @@ pub fn EditCard(card_id: String) -> Element {
                 }
             }
 
-            // Save Button
-            button {
-                class: "btn btn-primary block save-btn",
-                disabled: busy() || upload_progress().is_some(),
-                onclick: save,
-                {app.tr("save_changes")}
+            // Save & Delete Action Row
+            div { class: "edit-card-actions-row",
+                button {
+                    class: "btn btn-primary flex-1 save-btn",
+                    disabled: busy() || upload_progress().is_some(),
+                    onclick: save,
+                    {app.tr("save_changes")}
+                }
+                button {
+                    class: "btn btn-outline danger-btn delete-card-icon-btn",
+                    disabled: busy() || upload_progress().is_some(),
+                    title: app.tr("remove"),
+                    aria_label: app.tr("remove"),
+                    onclick: move |_| confirm_delete.set(true),
+                    // Trash can SVG icon (No Emoji)
+                    svg { width: "19", height: "19", view_box: "0 0 24 24", fill: "none", stroke: "currentColor", stroke_width: "2", stroke_linecap: "round", stroke_linejoin: "round",
+                        polyline { points: "3 6 5 6 21 6" }
+                        path { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" }
+                        line { x1: "10", y1: "11", x2: "10", y2: "17" }
+                        line { x1: "14", y1: "11", x2: "14", y2: "17" }
+                    }
+                }
+            }
+
+            // Confirm Delete Modal
+            if confirm_delete() {
+                div { class: "confirm-modal-overlay", onclick: move |_| confirm_delete.set(false),
+                    div { class: "confirm-modal-box", onclick: move |e| e.stop_propagation(),
+                        h3 { class: "confirm-modal-title", {app.tr("remove")} }
+                        p { class: "confirm-modal-text", {app.tr("delete_card_confirm")} }
+                        div { class: "confirm-modal-actions",
+                            button {
+                                class: "btn btn-outline",
+                                onclick: move |_| confirm_delete.set(false),
+                                {app.tr("cancel")}
+                            }
+                            button {
+                                class: "btn btn-primary danger-btn",
+                                disabled: busy(),
+                                onclick: move |_| {
+                                    confirm_delete.set(false);
+                                    delete_action();
+                                },
+                                {app.tr("remove")}
+                            }
+                        }
+                    }
+                }
             }
 
             if let Some(src) = crop_img() {

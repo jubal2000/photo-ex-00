@@ -159,6 +159,10 @@ pub async fn update_card(
     fs::update_fields(tok, &format!("cards/{card_id}"), fields).await
 }
 
+pub async fn delete_card(tok: &str, card_id: &str) -> R<()> {
+    fs::delete(tok, &format!("cards/{card_id}")).await
+}
+
 pub async fn update_artist(
     tok: &str,
     artist_id: &str,

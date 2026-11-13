@@ -160,6 +160,8 @@ strings! {
     "count" => ["보유", "Owned", "所持", "持有", "Tengo"],
     "tradable" => ["교환 가능", "Tradable", "交換可", "可交换", "Intercambio"],
     "remove" => ["삭제", "Remove", "削除", "删除", "Quitar"],
+    "delete_card_confirm" => ["이 카드를 삭제하시겠습니까?", "Are you sure you want to delete this card?", "このカードを削除しますか？", "确定要删除此卡片吗？", "¿Seguro que quieres eliminar esta carta?"],
+    "deleted" => ["카드를 삭제했어요", "Card deleted", "カードを削除しました", "已删除卡片", "Carta eliminada"],
     "create_artist" => ["새 아티스트", "New artist", "新しいアーティスト", "新艺人", "Nuevo artista"],
     "create_category" => ["새 카테고리", "New category", "新しいカテゴリー", "新分类", "Nueva categoría"],
     "create_series" => ["새 시리즈", "New series", "新しいシリーズ", "新系列", "Nueva serie"],

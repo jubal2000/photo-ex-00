@@ -78,6 +78,8 @@ pub fn ImageCropperModal(
     let mut zoom = use_signal(|| 1.0f64);
     let mut pan_x = use_signal(|| 0.0f64);
     let mut pan_y = use_signal(|| 0.0f64);
+    let mut nat_w = use_signal(|| 0.0f64);
+    let mut nat_h = use_signal(|| 0.0f64);
     let mut is_dragging = use_signal(|| false);
     let mut last_mouse = use_signal(|| (0.0f64, 0.0f64));
     let mut is_processing = use_signal(|| false);
@@ -86,6 +88,49 @@ pub fn ImageCropperModal(
         CropShape::CardRect => (220.0f64, 340.0f64, "mask-rect"),
         CropShape::Circle => (240.0f64, 240.0f64, "mask-circle"),
         CropShape::Square => (240.0f64, 240.0f64, "mask-square"),
+    };
+
+    // Query natural dimensions of the image on mount
+    use_effect(move || {
+        spawn(async move {
+            let js = r#"
+            (() => {
+                const img = document.getElementById("crop-source-image");
+                if (img && img.naturalWidth && img.naturalHeight) {
+                    dioxus.send(`${img.naturalWidth},${img.naturalHeight}`);
+                } else {
+                    dioxus.send("0,0");
+                }
+            })()
+            "#;
+            let mut eval = document::eval(js);
+            if let Ok(val) = eval.recv::<String>().await {
+                let parts: Vec<&str> = val.split(',').collect();
+                if parts.len() == 2 {
+                    if let (Ok(w), Ok(h)) = (parts[0].parse::<f64>(), parts[1].parse::<f64>()) {
+                        if w > 0.0 && h > 0.0 {
+                            nat_w.set(w);
+                            nat_h.set(h);
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+    let nw = nat_w();
+    let nh = nat_h();
+
+    let (rendered_w, rendered_h, min_limit) = if nw > 0.0 && nh > 0.0 {
+        let scale_x = view_w / nw;
+        let scale_y = view_h / nh;
+        let cover_scale = scale_x.max(scale_y);
+        let fit_scale = scale_x.min(scale_y);
+        let min_z = (fit_scale / cover_scale).min(1.0);
+        let min_l = (min_z * 0.98).max(0.05);
+        (nw * cover_scale, nh * cover_scale, min_l)
+    } else {
+        (view_w, view_h, 0.2f64)
     };
 
     let on_apply_original = {
@@ -194,6 +239,8 @@ pub fn ImageCropperModal(
             let py = pan_y();
             let vw = view_w;
             let vh = view_h;
+            let rw = rendered_w;
+            let rh = rendered_h;
             let shape_str = match shape {
                 CropShape::CardRect => "rect",
                 CropShape::Circle => "circle",
@@ -220,25 +267,16 @@ pub fn ImageCropperModal(
                             const panX = {px};
                             const panY = {py};
                             const shape = "{shape_str}";
+                            let renderedW = {rw};
+                            let renderedH = {rh};
 
-                            // Calculate base scale to 'cover' the viewfinder
-                            const scaleX = vw / img.naturalWidth;
-                            const scaleY = vh / img.naturalHeight;
-                            const baseScale = Math.max(scaleX, scaleY);
-                            const currentScale = baseScale * zoom;
-
-                            // Scale from screen pixels to natural image pixels
-                            const toNatural = 1.0 / currentScale;
-                            const sWidth = vw * toNatural;
-                            const sHeight = vh * toNatural;
-
-                            const centerImgX = (img.naturalWidth / 2.0) - (panX * toNatural);
-                            const centerImgY = (img.naturalHeight / 2.0) - (panY * toNatural);
-
-                            const sx = Math.max(0, centerImgX - (sWidth / 2.0));
-                            const sy = Math.max(0, centerImgY - (sHeight / 2.0));
-                            const sw = Math.min(img.naturalWidth - sx, sWidth);
-                            const sh = Math.min(img.naturalHeight - sy, sHeight);
+                            if (!renderedW || !renderedH || renderedW <= 0 || renderedH <= 0) {{
+                                const scaleX = vw / img.naturalWidth;
+                                const scaleY = vh / img.naturalHeight;
+                                const coverScale = Math.max(scaleX, scaleY);
+                                renderedW = img.naturalWidth * coverScale;
+                                renderedH = img.naturalHeight * coverScale;
+                            }}
 
                             // Target dimensions <= 1024 x 2048
                             let outW = 1024;
@@ -266,8 +304,25 @@ pub fn ImageCropperModal(
                             ctx.fillStyle = "#ffffff";
                             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                            // Draw cropped region directly from already-rendered DOM image
-                            ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+                            // Current dimensions of image on screen under zoom
+                            const currW = renderedW * zoom;
+                            const currH = renderedH * zoom;
+
+                            // Viewfinder top-left is (0, 0), center is (vw/2, vh/2).
+                            // Image top-left in viewfinder coordinates:
+                            const imgLeft = (vw - currW) / 2.0 + panX;
+                            const imgTop = (vh - currH) / 2.0 + panY;
+
+                            // Scale from screen viewfinder pixels to canvas pixels
+                            const scaleToCanvas = outW / vw;
+
+                            const destX = imgLeft * scaleToCanvas;
+                            const destY = imgTop * scaleToCanvas;
+                            const destW = currW * scaleToCanvas;
+                            const destH = currH * scaleToCanvas;
+
+                            // Draw image onto canvas: exact 1:1 match with viewfinder display
+                            ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, destX, destY, destW, destH);
 
                             // 80% JPEG compression
                             const dataUrl = canvas.toDataURL("image/jpeg", 0.80);
@@ -305,12 +360,21 @@ pub fn ImageCropperModal(
         }
     };
 
-    let img_transform = format!(
-        "transform: translate({px}px, {py}px) scale({z});",
-        px = pan_x(),
-        py = pan_y(),
-        z = zoom()
-    );
+    let img_transform = if nw > 0.0 && nh > 0.0 {
+        format!(
+            "width: {rendered_w:.1}px; height: {rendered_h:.1}px; max-width: none; max-height: none; transform: translate({px}px, {py}px) scale({z});",
+            px = pan_x(),
+            py = pan_y(),
+            z = zoom()
+        )
+    } else {
+        format!(
+            "transform: translate({px}px, {py}px) scale({z});",
+            px = pan_x(),
+            py = pan_y(),
+            z = zoom()
+        )
+    };
 
     rsx! {
         div { class: "crop-modal-overlay",
@@ -373,6 +437,32 @@ pub fn ImageCropperModal(
                             src: "{image_src}",
                             style: "{img_transform}",
                             draggable: "false",
+                            onload: move |_| {
+                                spawn(async move {
+                                    let js = r#"
+                                    (() => {
+                                        const img = document.getElementById("crop-source-image");
+                                        if (img && img.naturalWidth && img.naturalHeight) {
+                                            dioxus.send(`${img.naturalWidth},${img.naturalHeight}`);
+                                        } else {
+                                            dioxus.send("0,0");
+                                        }
+                                    })()
+                                    "#;
+                                    let mut eval = document::eval(js);
+                                    if let Ok(val) = eval.recv::<String>().await {
+                                        let parts: Vec<&str> = val.split(',').collect();
+                                        if parts.len() == 2 {
+                                            if let (Ok(w), Ok(h)) = (parts[0].parse::<f64>(), parts[1].parse::<f64>()) {
+                                                if w > 0.0 && h > 0.0 {
+                                                    nat_w.set(w);
+                                                    nat_h.set(h);
+                                                }
+                                            }
+                                        }
+                                    }
+                                });
+                            },
                         }
 
                         // Viewfinder cutout mask overlay
@@ -393,14 +483,14 @@ pub fn ImageCropperModal(
                     span { class: "crop-zoom-label", {app.tr("crop_zoom")} }
                     button {
                         class: "btn-zoom-step",
-                        onclick: move |_| zoom.set((zoom() - 0.2).max(1.0)),
+                        onclick: move |_| zoom.set((zoom() - 0.1).max(min_limit)),
                         "−"
                     }
                     input {
                         r#type: "range",
-                        min: "1.0",
+                        min: "{min_limit:.2}",
                         max: "3.0",
-                        step: "0.05",
+                        step: "0.01",
                         value: "{zoom()}",
                         oninput: move |e| {
                             if let Ok(v) = e.value().parse::<f64>() {
@@ -410,7 +500,7 @@ pub fn ImageCropperModal(
                     }
                     button {
                         class: "btn-zoom-step",
-                        onclick: move |_| zoom.set((zoom() + 0.2).min(3.0)),
+                        onclick: move |_| zoom.set((zoom() + 0.1).min(3.0)),
                         "+"
                     }
                 }

@@ -149,7 +149,7 @@ pub fn Holdings() -> Element {
                 button {
                     class: if show_all() { "chip on" } else { "chip" },
                     onclick: move |_| show_all.set(true),
-                    "👁 " {app.tr("show_all_cards")}
+                    {app.tr("show_all_cards")}
                 }
             }
 
@@ -246,7 +246,7 @@ fn HoldingRow(holding: Holding, groups: HashMap<String, bool>) -> Element {
             }
             if is_unowned {
                 div { class: "holding-controls holding-unowned-ctrl",
-                    span { class: "pill-unowned small muted", "🔒 " {app.tr("unowned")} }
+                    span { class: "pill-unowned small muted", {app.tr("unowned")} }
                     button {
                         class: "btn btn-outline small btn-quick-add",
                         onclick: move |_| {
@@ -273,7 +273,7 @@ fn HoldingRow(holding: Holding, groups: HashMap<String, bool>) -> Element {
                     div { class: "ctrl",
                         span { class: "small muted",
                             if *app.protect_single_card.read() && holding.count <= 1 {
-                                "🔒 " {app.tr("protect_single_card")}
+                                {app.tr("protect_single_card")}
                             } else {
                                 {app.tr("tradable")}
                             }
@@ -302,7 +302,7 @@ fn HoldingRow(holding: Holding, groups: HashMap<String, bool>) -> Element {
                             let edit_id = cid.clone();
                             move |_| app.push(Screen::EditCard { card_id: edit_id.clone() })
                         },
-                        "✏️ " {app.tr("edit")}
+                        {app.tr("edit")}
                     }
                     button { class: "link danger small",
                         onclick: move |_| {
@@ -324,7 +324,7 @@ fn HoldingRow(holding: Holding, groups: HashMap<String, bool>) -> Element {
                     onclick: move |_| confirm_all.set(None),
                     div { class: "confirm-modal-box",
                         onclick: move |e| e.stop_propagation(),
-                        h3 { class: "confirm-modal-title", "⚠️ " {app.tr("warn_all_tradable_title")} }
+                        h3 { class: "confirm-modal-title", {app.tr("warn_all_tradable_title")} }
                         p { class: "confirm-modal-text",
                             {app.tr("warn_all_tradable_desc").replace("{count}", &holding.count.to_string())}
                         }

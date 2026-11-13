@@ -139,7 +139,7 @@ pub fn EditCard(card_id: String) -> Element {
                 div { class: "preview-badge-tag", {app.tr("preview")} }
                 div { class: "preview-card-wrap",
                     if preview_card.image_url.is_empty() {
-                        div { class: "preview-img preview-img-empty", "🃏" }
+                        div { class: "preview-img preview-img-empty" }
                     } else {
                         img { class: "preview-img", src: "{preview_card.image_url}", alt: "{preview_card.name}" }
                     }
@@ -241,7 +241,7 @@ pub fn EditCard(card_id: String) -> Element {
                 class: "btn btn-primary block save-btn",
                 disabled: busy() || upload_progress().is_some(),
                 onclick: save,
-                "💾 " {app.tr("save_changes")}
+                {app.tr("save_changes")}
             }
 
             if let Some(src) = crop_img() {

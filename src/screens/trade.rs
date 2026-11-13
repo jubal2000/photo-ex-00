@@ -512,19 +512,19 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
             div { class: "trade-context-banner",
                 if let Some(ref aid) = target_artist_id {
                     span { class: "trade-context-item artist",
-                        "🎤 " {catalog.artist_name(aid)}
+                        {catalog.artist_name(aid)}
                     }
                 }
                 if let Some(ref cid) = cur_cat {
                     span { class: "trade-context-sep", "•" }
                     span { class: "trade-context-item category",
-                        "📁 " {catalog.category_name(cid)}
+                        {catalog.category_name(cid)}
                     }
                 }
                 if let Some(ref sid) = cur_ser {
                     span { class: "trade-context-sep", "•" }
                     span { class: "trade-context-item series",
-                        "🏷️ " {catalog.series_name(sid)}
+                        {catalog.series_name(sid)}
                     }
                 }
             }
@@ -588,7 +588,6 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
             // Pairing Instruction Hint & Auto Match Button
             div { class: "trade-action-bar",
                 div { class: "trade-hint-bar",
-                    span { class: "hint-icon", "💡" }
                     span { class: "hint-text", {app.tr("trade_drag_hint")} }
                 }
                 button {
@@ -636,7 +635,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                 div { class: "trade-section trade-section-theirs",
                     div { class: "trade-section-head",
                         h3 { class: "sub-title",
-                            "📥 " {app.tr("trade_theirs")}
+                            {app.tr("trade_theirs")}
                         }
                         span { class: "muted small",
                             "{display_cards.len()}{app.tr(\"pieces\")}"
@@ -758,7 +757,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                                                         e.stop_propagation();
                                                         app.push(Screen::EditCard { card_id: cid_edit.clone() });
                                                     },
-                                                    "✏️"
+                                                    "수정"
                                                 }
                                             }
                                         }
@@ -772,7 +771,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                 div { class: "trade-section trade-section-mine",
                     div { class: "trade-section-head",
                         h3 { class: "sub-title",
-                            "📤 " {app.tr("trade_mine")}
+                            {app.tr("trade_mine")}
                         }
                         span { class: "muted small",
                             "{display_cards.len()}{app.tr(\"pieces\")}"
@@ -874,7 +873,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                                                 } else if partner_already_owns {
                                                     Some(app.tr("already_owned").to_string())
                                                 } else if is_protected {
-                                                    Some("🔒 ".to_string() + app.tr("protect_single_card"))
+                                                    Some(app.tr("protect_single_card").to_string())
                                                 } else if is_connected {
                                                     Some(app.tr("trade_paired").to_string())
                                                 } else if is_tradable {
@@ -900,7 +899,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                                                         e.stop_propagation();
                                                         app.push(Screen::EditCard { card_id: cid_edit.clone() });
                                                     },
-                                                    "✏️"
+                                                    "수정"
                                                 }
                                             }
                                         }
@@ -948,7 +947,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                                             if !my_card.image_url.is_empty() {
                                                 img { class: "pair-thumb-mini", src: "{my_card.image_url}", alt: "{my_card.name}" }
                                             } else {
-                                                div { class: "pair-thumb-empty", "🃏" }
+                                                div { class: "pair-thumb-empty" }
                                             }
                                             div { class: "pair-node-info",
                                                 div { class: "pair-node-role muted", {app.tr("trade_give_card")} }
@@ -958,7 +957,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
 
                                         // Animated Connecting Arrow
                                         div { class: "pair-arrow-bridge",
-                                            span { class: "arrow-head", "➔" }
+                                            span { class: "arrow-head", "→" }
                                             span { class: "arrow-sub-head", "⇄" }
                                         }
 
@@ -967,7 +966,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                                             if !their_card.image_url.is_empty() {
                                                 img { class: "pair-thumb-mini", src: "{their_card.image_url}", alt: "{their_card.name}" }
                                             } else {
-                                                div { class: "pair-thumb-empty", "🃏" }
+                                                div { class: "pair-thumb-empty" }
                                             }
                                             div { class: "pair-node-info",
                                                 div { class: "pair-node-role muted", {app.tr("trade_receive_card")} }
@@ -1008,13 +1007,13 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                         class: "btn btn-outline preview-trade-btn",
                         disabled: pairs.read().is_empty(),
                         onclick: move |_| show_preview.set(true),
-                        "👁 " {app.tr("trade_preview")}
+                        {app.tr("trade_preview")}
                     }
                     button {
                         class: "btn btn-primary submit-trade-btn",
                         disabled: pairs.read().is_empty() || sending(),
                         onclick: submit_btn_click,
-                        "🚀 " {app.tr("trade_submit")}
+                        {app.tr("trade_submit")}
                     }
                 }
             }
@@ -1025,7 +1024,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                 div { class: "trade-preview-modal",
                     div { class: "preview-modal-head",
                         div { class: "preview-modal-title bold",
-                            "✨ " {app.tr("trade_preview_title")}
+                            {app.tr("trade_preview_title")}
                         }
                         button {
                             class: "btn-icon-subtle close-modal-btn",
@@ -1049,7 +1048,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                             button {
                                 class: if preview_show_all() { "chip on" } else { "chip" },
                                 onclick: move |_| preview_show_all.set(true),
-                                "👁 " {app.tr("preview_all")}
+                                {app.tr("preview_all")}
                             }
                         }
 
@@ -1103,11 +1102,11 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                                                         div { class: "preview-cname", "{card.name}" }
                                                         div { class: "preview-cstatus",
                                                             if is_new {
-                                                                span { class: "status-pill new", "{app.tr(\"acquired_new\")} (0➔{after}장)" }
+                                                                span { class: "status-pill new", "{app.tr(\"acquired_new\")} (0 → {after}장)" }
                                                             } else if is_increased {
-                                                                span { class: "status-pill up", "{app.tr(\"count_increased\")} ({cur}➔{after}장)" }
+                                                                span { class: "status-pill up", "{app.tr(\"count_increased\")} ({cur} → {after}장)" }
                                                             } else if is_decreased {
-                                                                span { class: "status-pill down", "{app.tr(\"count_decreased\")} ({cur}➔{after}장)" }
+                                                                span { class: "status-pill down", "{app.tr(\"count_decreased\")} ({cur} → {after}장)" }
                                                             } else if is_unowned {
                                                                 span { class: "status-pill unowned", "{app.tr(\"unowned\")} (0장)" }
                                                             } else {
@@ -1134,7 +1133,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                             class: "btn btn-primary",
                             disabled: sending(),
                             onclick: modal_submit_click,
-                            "🚀 " {app.tr("trade_submit")}
+                            {app.tr("trade_submit")}
                         }
                     }
                 }

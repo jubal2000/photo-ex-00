@@ -104,14 +104,14 @@ pub fn Login() -> Element {
             } else {
                 div { class: "login-buttons",
                     if bio_ready {
-                        button { class: "btn btn-bio", onclick: move |_| bio_login(), "🔐 " {app.tr("login_bio")} }
+                        button { class: "btn btn-bio", onclick: move |_| bio_login(), {app.tr("login_bio")} }
                     }
                     button { class: "btn btn-google", onclick: move |_| social(Provider::Google),
                         span { class: "provider-icon", "G" } {app.tr("login_google")} }
                     button { class: "btn btn-apple", onclick: move |_| social(Provider::Apple),
                         span { class: "provider-icon", "" } {app.tr("login_apple")} }
                     button { class: "btn btn-kakao", onclick: move |_| social(Provider::Kakao),
-                        span { class: "provider-icon", "💬" } {app.tr("login_kakao")} }
+                        span { class: "provider-icon", "K" } {app.tr("login_kakao")} }
                     if config::USE_EMULATOR {
                         button { class: "btn btn-ghost",
                             onclick: move |_| {

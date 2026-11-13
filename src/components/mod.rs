@@ -62,6 +62,7 @@ pub fn SideMenu() -> Element {
                 }
             }
             button { class: "drawer-item", onclick: move |_| app.open(Screen::Profile), {app.tr("menu_profile")} }
+            button { class: "drawer-item", onclick: move |_| app.open(Screen::Trades), {app.tr("menu_trades")} }
             button { class: "drawer-item", onclick: move |_| app.open(Screen::Holdings), {app.tr("menu_holdings")} }
             button { class: "drawer-item", onclick: move |_| app.open(Screen::Create { initial_kind: None, initial_artist_id: None }), {app.tr("menu_create")} }
             button { class: "drawer-item", onclick: move |_| app.open(Screen::Settings), {app.tr("menu_settings")} }
@@ -103,7 +104,7 @@ pub fn Avatar(url: String, size: u32) -> Element {
     let style = format!("width:{size}px;height:{size}px");
     rsx! {
         if url.is_empty() {
-            div { class: "avatar avatar-empty", style: "{style}", "👤" }
+            div { class: "avatar avatar-empty", style: "{style}" }
         } else {
             img { class: "avatar", style: "{style}", src: "{url}", alt: "" }
         }
@@ -119,7 +120,7 @@ pub fn ArtistAvatar(
     #[props(default = 32)] size: u32,
 ) -> Element {
     let sz = size;
-    let initial = name.chars().next().map(|c| c.to_uppercase().to_string()).unwrap_or_else(|| "★".to_string());
+    let initial = name.chars().next().map(|c| c.to_uppercase().to_string()).unwrap_or_else(|| "?".to_string());
     let bg_color = if !color.trim().is_empty() {
         color.trim().to_string()
     } else {
@@ -203,7 +204,7 @@ pub fn CardThumb(
                 RarityBadge { count: r }
             }
             if card.image_url.is_empty() {
-                div { class: "card-img card-img-empty", "🃏" }
+                div { class: "card-img card-img-empty" }
             } else {
                 img { class: "card-img", src: "{card.image_url}", alt: "{card.name}", loading: "lazy" }
             }

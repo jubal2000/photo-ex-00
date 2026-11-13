@@ -25,6 +25,7 @@ pub enum Screen {
     Trade { partner_uid: String, category_id: Option<String>, artist_id: Option<String> },
     Search,
     Profile,
+    Trades,
     Holdings,
     Create { initial_kind: Option<String>, initial_artist_id: Option<String> },
     EditCard { card_id: String },

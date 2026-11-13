@@ -149,6 +149,7 @@ fn screen_view(s: Screen) -> Element {
         Screen::Trade { partner_uid, category_id, artist_id } => rsx! { screens::Trade { partner_uid, category_id, artist_id } },
         Screen::Search => rsx! { screens::Search {} },
         Screen::Profile => rsx! { screens::ProfileScreen {} },
+        Screen::Trades => rsx! { screens::TradesScreen {} },
         Screen::Holdings => rsx! { screens::Holdings {} },
         Screen::Create { initial_kind, initial_artist_id } => rsx! { screens::Create { initial_kind, initial_artist_id } },
         Screen::EditCard { card_id } => rsx! { screens::EditCard { card_id } },

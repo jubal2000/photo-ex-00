@@ -98,7 +98,7 @@ pub fn Home() -> Element {
                                                         category_id: Some(cid.clone()),
                                                     }),
                                                     div { class: "category-cover",
-                                                        if let Some(u) = cover { img { src: "{u}", alt: "" } } else { span { "📁" } }
+                                                        if let Some(u) = cover { img { src: "{u}", alt: "" } } else { span { class: "cover-placeholder" } }
                                                     }
                                                     div { class: "category-name", "{c.name}" }
                                                     div { class: "muted small", "{series_n} " {app.tr("series")} }

@@ -11,6 +11,7 @@ mod profile;
 mod search;
 mod settings;
 mod trade;
+mod trades;
 
 pub use artist::ArtistDetail;
 pub use create::Create;
@@ -25,3 +26,4 @@ pub use profile::ProfileScreen;
 pub use search::Search;
 pub use settings::Settings;
 pub use trade::Trade;
+pub use trades::TradesScreen;

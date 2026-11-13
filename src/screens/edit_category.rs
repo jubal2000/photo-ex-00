@@ -166,7 +166,7 @@ pub fn EditCategory(category_id: String) -> Element {
                 class: "btn btn-primary block save-btn",
                 disabled: busy() || upload_progress().is_some(),
                 onclick: save,
-                "💾 " {app.tr("save_changes")}
+                {app.tr("save_changes")}
             }
 
             if let Some(src) = crop_img() {

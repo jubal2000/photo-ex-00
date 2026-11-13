@@ -89,7 +89,7 @@ pub fn ImageCropperModal(
     };
 
     let on_apply = {
-        let image_src = image_src.clone();
+        let mut app = app;
         move |_| {
             if is_processing() {
                 return;
@@ -106,37 +106,33 @@ pub fn ImageCropperModal(
                 CropShape::Circle => "circle",
                 CropShape::Square => "square",
             };
-            let src = image_src.clone();
 
             spawn(async move {
-                let mut eval = document::eval(
+                let js = format!(
                     r##"
-                    (async () => {
-                        try {
-                            const params = await dioxus.recv();
-                            const img = new Image();
-                            img.crossOrigin = "anonymous";
-                            await new Promise((resolve, reject) => {
-                                img.onload = resolve;
-                                img.onerror = () => reject(new Error("Image load failed"));
-                                img.src = params.src;
-                            });
+                    (async () => {{
+                        try {{
+                            let img = document.getElementById("crop-source-image");
+                            if (!img || !img.naturalWidth || !img.naturalHeight) {{
+                                img = document.querySelector(".crop-image-elem");
+                            }}
+                            if (!img || !img.naturalWidth || !img.naturalHeight) {{
+                                dioxus.send("ERROR:Image element not ready");
+                                return;
+                            }}
 
-                            const vw = params.vw;
-                            const vh = params.vh;
-                            const zoom = params.zoom;
-                            const panX = params.panX;
-                            const panY = params.panY;
-                            const shape = params.shape;
+                            const vw = {vw};
+                            const vh = {vh};
+                            const zoom = {z};
+                            const panX = {px};
+                            const panY = {py};
+                            const shape = "{shape_str}";
 
                             // Calculate base scale to 'cover' the viewfinder
                             const scaleX = vw / img.naturalWidth;
                             const scaleY = vh / img.naturalHeight;
                             const baseScale = Math.max(scaleX, scaleY);
                             const currentScale = baseScale * zoom;
-
-                            const displayedW = img.naturalWidth * currentScale;
-                            const displayedH = img.naturalHeight * currentScale;
 
                             // Scale from screen pixels to natural image pixels
                             const toNatural = 1.0 / currentScale;
@@ -152,29 +148,21 @@ pub fn ImageCropperModal(
                             const sh = Math.min(img.naturalHeight - sy, sHeight);
 
                             // Target dimensions <= 1024 x 2048
-                            const maxW = 1024;
-                            const maxH = 2048;
-                            let outW = sw;
-                            let outH = sh;
-
-                            // Upscale if small or downscale to max 1024x2048
-                            const targetRatio = vw / vh;
-                            if (shape === "rect") {
+                            let outW = 1024;
+                            let outH = 1024;
+                            if (shape === "rect") {{
                                 outW = 1024;
-                                outH = Math.round(1024 / targetRatio);
-                            } else {
-                                outW = 1024;
-                                outH = 1024;
-                            }
+                                outH = Math.round(1024 * (vh / vw));
+                            }}
 
-                            if (outW > maxW) {
-                                outH = Math.round(outH * (maxW / outW));
-                                outW = maxW;
-                            }
-                            if (outH > maxH) {
-                                outW = Math.round(outW * (maxH / outH));
-                                outH = maxH;
-                            }
+                            if (outW > 1024) {{
+                                outH = Math.round(outH * (1024 / outW));
+                                outW = 1024;
+                            }}
+                            if (outH > 2048) {{
+                                outW = Math.round(outW * (2048 / outH));
+                                outH = 2048;
+                            }}
 
                             const canvas = document.createElement("canvas");
                             canvas.width = Math.round(outW);
@@ -185,37 +173,38 @@ pub fn ImageCropperModal(
                             ctx.fillStyle = "#ffffff";
                             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                            // Draw cropped region
+                            // Draw cropped region directly from already-rendered DOM image
                             ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
 
                             // 80% JPEG compression
                             const dataUrl = canvas.toDataURL("image/jpeg", 0.80);
                             dioxus.send(dataUrl);
-                        } catch (err) {
+                        }} catch (err) {{
                             console.error("Crop error:", err);
-                            dioxus.send("ERROR:" + err.message);
-                        }
-                    })();
-                    "##,
+                            dioxus.send("ERROR:" + (err && err.message ? err.message : String(err)));
+                        }}
+                    }})();
+                    "##
                 );
 
-                let _ = eval.send(serde_json::json!({
-                    "src": src,
-                    "vw": vw,
-                    "vh": vh,
-                    "zoom": z,
-                    "panX": px,
-                    "panY": py,
-                    "shape": shape_str,
-                }));
-
-                if let Ok(val) = eval.recv::<String>().await {
-                    if val.starts_with("data:image/jpeg;base64,") {
-                        let b64 = &val["data:image/jpeg;base64,".len()..];
-                        if let Ok(bytes) = BASE64_STANDARD.decode(b64) {
-                            on_confirm.call(bytes);
-                            return;
+                let mut eval = document::eval(&js);
+                match eval.recv::<String>().await {
+                    Ok(val) => {
+                        if let Some(b64) = val.strip_prefix("data:image/jpeg;base64,") {
+                            if let Ok(bytes) = BASE64_STANDARD.decode(b64) {
+                                on_confirm.call(bytes);
+                                return;
+                            } else {
+                                app.show_toast("이미지 디코딩에 실패했습니다.");
+                            }
+                        } else if let Some(err_msg) = val.strip_prefix("ERROR:") {
+                            app.show_toast(format!("자르기 오류: {err_msg}"));
+                        } else {
+                            app.show_toast("잘못된 이미지 형식입니다.");
                         }
+                    }
+                    Err(e) => {
+                        app.show_toast(format!("자르기 처리 실패: {e}"));
                     }
                 }
                 is_processing.set(false);
@@ -282,8 +271,9 @@ pub fn ImageCropperModal(
                         },
                         ontouchend: move |_| is_dragging.set(false),
 
-                        // The underlying image
+                        // The underlying image in DOM
                         img {
+                            id: "crop-source-image",
                             class: "crop-image-elem",
                             src: "{image_src}",
                             style: "{img_transform}",
@@ -301,7 +291,7 @@ pub fn ImageCropperModal(
                     }
                 }
 
-                p { class: "crop-guide-text", "👆 " {app.tr("crop_guide")} }
+                p { class: "crop-guide-text", {app.tr("crop_guide")} }
 
                 // Zoom control bar
                 div { class: "crop-zoom-bar",
@@ -363,7 +353,7 @@ pub fn UploadProgressOverlay(progress_percent: Option<u8>) -> Element {
     rsx! {
         div { class: "upload-dim-overlay",
             div { class: "upload-card",
-                div { class: "upload-icon-spinner", "☁️" }
+                div { class: "upload-icon-spinner spinner" }
                 h4 { class: "upload-title", {app.tr("uploading_image")} }
                 div { class: "upload-progress-track",
                     div {

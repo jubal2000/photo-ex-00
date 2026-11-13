@@ -49,7 +49,7 @@ def upload_tree(ftp, local_root, remote_root):
 
 try:
     ftp = ftplib.FTP()
-    ftp.connect(HOST, 21, timeout=30)
+    ftp.connect(HOST, 21, timeout=90)
     ftp.login(USER, PASS)
     ftp.set_pasv(True)
     print(f"  접속 성공: {HOST}")

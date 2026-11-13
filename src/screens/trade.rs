@@ -26,6 +26,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
     let mut selected_their_card = use_signal(|| Option::<String>::None);
     let mut dragged_my_card = use_signal(|| Option::<String>::None);
     let mut show_preview = use_signal(|| false);
+    let mut show_location_modal = use_signal(|| false);
     let mut preview_show_all = use_signal(|| false);
     let mut sending = use_signal(|| false);
 
@@ -507,6 +508,12 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                     if !partner.greeting.is_empty() {
                         div { class: "partner-greeting muted small", "{partner.greeting}" }
                     }
+                }
+                button {
+                    class: "btn btn-sm btn-outline partner-loc-btn",
+                    r#type: "button",
+                    onclick: move |_| show_location_modal.set(true),
+                    {app.tr("view_trade_locations")}
                 }
             }
 
@@ -1136,6 +1143,48 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                             disabled: sending(),
                             onclick: modal_submit_click,
                             {app.tr("trade_submit")}
+                        }
+                    }
+                }
+            }
+
+            // Partner Trade Locations Modal
+            if show_location_modal() {
+                div { class: "scrim", onclick: move |_| show_location_modal.set(false) }
+                div { class: "location-modal-wrap",
+                    div { class: "location-modal-card",
+                        div { class: "location-modal-header",
+                            h3 { {app.tr("partner_trade_locations_title")} }
+                            button {
+                                class: "location-close-btn",
+                                title: app.tr("cancel"),
+                                onclick: move |_| show_location_modal.set(false),
+                                "✕"
+                            }
+                        }
+                        div { class: "location-modal-body",
+                            if partner.trade_locations.is_empty() {
+                                div { class: "location-all-notice",
+                                    span { class: "pill-highlight", {app.tr("trade_locations_all")} }
+                                    p { class: "muted small", {app.tr("trade_locations_hint")} }
+                                }
+                            } else {
+                                div { class: "partner-locations-list",
+                                    for (idx, loc) in partner.trade_locations.iter().enumerate() {
+                                        div { key: "{idx}", class: "partner-location-item",
+                                            span { class: "location-idx-badge", "{idx + 1}" }
+                                            span { class: "location-text", "{loc}" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        div { class: "location-modal-footer",
+                            button {
+                                class: "btn btn-primary block",
+                                onclick: move |_| show_location_modal.set(false),
+                                {app.tr("confirm")}
+                            }
                         }
                     }
                 }

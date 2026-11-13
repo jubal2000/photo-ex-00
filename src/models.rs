@@ -24,6 +24,7 @@ pub struct Profile {
     pub greeting: String,
     pub photo_url: String,
     pub favorite_artists: Vec<String>,
+    pub trade_locations: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -126,8 +127,19 @@ pub struct Trade {
     pub to_uid: String,
     pub offered: Vec<TradeItem>,
     pub requested: Vec<TradeItem>,
-    /// pending | accepted | rejected | cancelled
+    /// pending | accepted | rejected | cancelled | completed
     pub status: String,
+    pub created_at: u64,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ChatMessage {
+    pub id: String,
+    pub trade_id: String,
+    pub sender_uid: String,
+    pub sender_name: String,
+    pub text: String,
     pub created_at: u64,
 }
 

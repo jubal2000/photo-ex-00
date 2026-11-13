@@ -14,6 +14,8 @@ pub fn ProfileScreen() -> Element {
     let mut greeting = use_signal(|| init.greeting.clone());
     let mut photo = use_signal(|| init.photo_url.clone());
     let mut favs = use_signal(|| init.favorite_artists.clone());
+    let mut locations = use_signal(|| init.trade_locations.clone());
+    let mut new_location_input = use_signal(String::new);
     let mut crop_img = use_signal(|| None::<String>);
     let mut upload_progress = use_signal(|| None::<u8>);
 
@@ -57,6 +59,7 @@ pub fn ProfileScreen() -> Element {
             p.greeting = greeting().trim().to_string();
             p.photo_url = photo();
             p.favorite_artists = favs();
+            p.trade_locations = locations();
             let Ok(tok) = app.token().await else { return };
             match api::save_profile(&tok, &uid, &p).await {
                 Ok(_) => {
@@ -102,6 +105,87 @@ pub fn ProfileScreen() -> Element {
                                 button { key: "{a.id}", class: if on { "chip on" } else { "chip" },
                                     onclick: move |_| { let mut f = favs.write(); if let Some(i) = f.iter().position(|x| *x == id) { f.remove(i); } else { f.push(id.clone()); } },
                                     "{a.name}"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            div { class: "field",
+                div { class: "field-header-row",
+                    span { {app.tr("trade_locations")} }
+                    span { class: "field-hint muted small", {app.tr("trade_locations_hint")} }
+                }
+                div { class: "location-input-row",
+                    input {
+                        class: "input location-input",
+                        value: "{new_location_input}",
+                        placeholder: app.tr("location_placeholder"),
+                        maxlength: 30,
+                        disabled: locations.read().len() >= 5,
+                        oninput: move |e| new_location_input.set(e.value()),
+                        onkeydown: {
+                            let mut app = app;
+                            move |e: KeyboardEvent| {
+                                if e.key() == Key::Enter {
+                                    let text = new_location_input().trim().to_string();
+                                    if text.is_empty() { return; }
+                                    if locations.read().len() >= 5 {
+                                        app.show_toast(app.tr("max_locations_reached"));
+                                        return;
+                                    }
+                                    if !locations.read().contains(&text) {
+                                        locations.write().push(text);
+                                    }
+                                    new_location_input.set(String::new());
+                                }
+                            }
+                        },
+                    }
+                    button {
+                        class: "btn btn-outline btn-sm",
+                        r#type: "button",
+                        disabled: locations.read().len() >= 5 || new_location_input().trim().is_empty(),
+                        onclick: {
+                            let mut app = app;
+                            move |_| {
+                                let text = new_location_input().trim().to_string();
+                                if text.is_empty() { return; }
+                                if locations.read().len() >= 5 {
+                                    app.show_toast(app.tr("max_locations_reached"));
+                                    return;
+                                }
+                                if !locations.read().contains(&text) {
+                                    locations.write().push(text);
+                                }
+                                new_location_input.set(String::new());
+                            }
+                        },
+                        {app.tr("add_location")}
+                    }
+                }
+                if locations.read().is_empty() {
+                    div { class: "location-empty-notice muted small",
+                        {app.tr("trade_locations_all")}
+                    }
+                } else {
+                    div { class: "chips location-chips",
+                        for (idx, loc) in locations.read().iter().enumerate() {
+                            {
+                                let loc_c = loc.clone();
+                                rsx! {
+                                    div { key: "{idx}-{loc}", class: "location-chip",
+                                        span { class: "location-name", "{loc_c}" }
+                                        button {
+                                            class: "location-del-btn",
+                                            r#type: "button",
+                                            title: app.tr("cancel"),
+                                            onclick: move |_| {
+                                                locations.write().retain(|x| x != &loc_c);
+                                            },
+                                            "×"
+                                        }
+                                    }
                                 }
                             }
                         }

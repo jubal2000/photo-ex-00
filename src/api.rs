@@ -445,6 +445,30 @@ pub async fn accept_trade(tok: &str, trade_id: &str) -> R<()> {
     functions::accept_trade(tok, trade_id).await
 }
 
+pub async fn load_trade_messages(tok: &str, trade_id: &str) -> R<Vec<ChatMessage>> {
+    let mut msgs = fs::list::<ChatMessage>(tok, &format!("trades/{trade_id}/messages")).await?;
+    msgs.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+    Ok(msgs)
+}
+
+pub async fn send_trade_message(
+    tok: &str,
+    trade_id: &str,
+    sender_uid: &str,
+    sender_name: &str,
+    text: &str,
+) -> R<String> {
+    let msg = ChatMessage {
+        id: String::new(),
+        trade_id: trade_id.into(),
+        sender_uid: sender_uid.into(),
+        sender_name: sender_name.into(),
+        text: text.trim().into(),
+        created_at: now_secs(),
+    };
+    fs::add(tok, &format!("trades/{trade_id}/messages"), &msg).await
+}
+
 pub async fn load_global_card_counts(tok: &str, my_holdings: &[Holding]) -> HashMap<String, i64> {
     let mut map: HashMap<String, i64> = HashMap::new();
     for h in my_holdings {

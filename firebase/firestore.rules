@@ -75,13 +75,21 @@ service cloud.firestore {
         && request.resource.data.fromUid == request.auth.uid
         && request.resource.data.toUid != request.auth.uid
         && request.resource.data.status == 'pending';
-      // Only the status may change, and only pending -> rejected (receiver) / cancelled (sender).
-      // Acceptance happens in the acceptTrade Cloud Function (admin, transactional).
+      // Status transition rules:
+      // - pending -> rejected (toUid) / cancelled (fromUid)
+      // - accepted -> completed (either fromUid or toUid)
       allow update: if signedIn()
-        && resource.data.status == 'pending'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
-        && ((request.resource.data.status == 'rejected' && resource.data.toUid == request.auth.uid)
-          || (request.resource.data.status == 'cancelled' && resource.data.fromUid == request.auth.uid));
+        && (((resource.data.status == 'pending' && request.resource.data.status == 'rejected' && resource.data.toUid == request.auth.uid)
+          || (resource.data.status == 'pending' && request.resource.data.status == 'cancelled' && resource.data.fromUid == request.auth.uid)
+          || (resource.data.status == 'accepted' && request.resource.data.status == 'completed' && (resource.data.fromUid == request.auth.uid || resource.data.toUid == request.auth.uid))));
+
+      // Trade chat messages between the two trade participants
+      match /messages/{msgId} {
+        allow read, create: if signedIn()
+          && (get(/databases/$(database)/documents/trades/$(id)).data.fromUid == request.auth.uid
+              || get(/databases/$(database)/documents/trades/$(id)).data.toUid == request.auth.uid);
+      }
     }
 
     // ---- sign-in hand-off (functions only) ----

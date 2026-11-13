@@ -65,6 +65,24 @@ pub async fn read_image_data_url(e: &Event<FormData>, input_id: &str) -> Option<
     None
 }
 
+fn clamp_pan(
+    pan_x: f64,
+    pan_y: f64,
+    zoom: f64,
+    rendered_w: f64,
+    rendered_h: f64,
+    view_w: f64,
+    view_h: f64,
+) -> (f64, f64) {
+    let curr_w = rendered_w * zoom;
+    let curr_h = rendered_h * zoom;
+    let max_pan_x = ((curr_w - view_w) / 2.0).max(0.0);
+    let max_pan_y = ((curr_h - view_h) / 2.0).max(0.0);
+    let cx = pan_x.clamp(-max_pan_x, max_pan_x);
+    let cy = pan_y.clamp(-max_pan_y, max_pan_y);
+    (cx, cy)
+}
+
 /// Modal for interactive image cropping & zooming.
 /// Produces a JPEG image compressed to 80% quality with dimensions <= 1024x2048.
 #[component]
@@ -127,12 +145,9 @@ pub fn ImageCropperModal(
         let scale_x = view_w / nw;
         let scale_y = view_h / nh;
         let cover_scale = scale_x.max(scale_y);
-        let fit_scale = scale_x.min(scale_y);
-        let min_z = (fit_scale / cover_scale).min(1.0);
-        let min_l = (min_z * 0.98).max(0.05);
-        (nw * cover_scale, nh * cover_scale, min_l)
+        (nw * cover_scale, nh * cover_scale, 1.0f64)
     } else {
-        (view_w, view_h, 0.2f64)
+        (view_w, view_h, 1.0f64)
     };
 
     let on_apply_original = {
@@ -405,8 +420,17 @@ pub fn ImageCropperModal(
                                 let (lx, ly) = last_mouse();
                                 let cx = e.client_coordinates().x;
                                 let cy = e.client_coordinates().y;
-                                pan_x += cx - lx;
-                                pan_y += cy - ly;
+                                let (clamped_x, clamped_y) = clamp_pan(
+                                    pan_x() + (cx - lx),
+                                    pan_y() + (cy - ly),
+                                    zoom(),
+                                    rendered_w,
+                                    rendered_h,
+                                    view_w,
+                                    view_h,
+                                );
+                                pan_x.set(clamped_x);
+                                pan_y.set(clamped_y);
                                 last_mouse.set((cx, cy));
                             }
                         },
@@ -418,6 +442,17 @@ pub fn ImageCropperModal(
                             let step = -dy * 0.002;
                             let new_z = (zoom() + step).clamp(min_limit, 3.0);
                             zoom.set(new_z);
+                            let (clamped_x, clamped_y) = clamp_pan(
+                                pan_x(),
+                                pan_y(),
+                                new_z,
+                                rendered_w,
+                                rendered_h,
+                                view_w,
+                                view_h,
+                            );
+                            pan_x.set(clamped_x);
+                            pan_y.set(clamped_y);
                         },
                         ontouchstart: move |e| {
                             let touches = e.touches();
@@ -449,6 +484,17 @@ pub fn ImageCropperModal(
                                         let factor = curr_dist / start_dist;
                                         let new_z = (pinch_start_zoom() * factor).clamp(min_limit, 3.0);
                                         zoom.set(new_z);
+                                        let (clamped_x, clamped_y) = clamp_pan(
+                                            pan_x(),
+                                            pan_y(),
+                                            new_z,
+                                            rendered_w,
+                                            rendered_h,
+                                            view_w,
+                                            view_h,
+                                        );
+                                        pan_x.set(clamped_x);
+                                        pan_y.set(clamped_y);
                                     }
                                 }
                             } else if is_dragging() && touches.len() == 1 {
@@ -456,8 +502,17 @@ pub fn ImageCropperModal(
                                     let (lx, ly) = last_mouse();
                                     let cx = t.client_coordinates().x;
                                     let cy = t.client_coordinates().y;
-                                    pan_x += cx - lx;
-                                    pan_y += cy - ly;
+                                    let (clamped_x, clamped_y) = clamp_pan(
+                                        pan_x() + (cx - lx),
+                                        pan_y() + (cy - ly),
+                                        zoom(),
+                                        rendered_w,
+                                        rendered_h,
+                                        view_w,
+                                        view_h,
+                                    );
+                                    pan_x.set(clamped_x);
+                                    pan_y.set(clamped_y);
                                     last_mouse.set((cx, cy));
                                 }
                             }
@@ -534,7 +589,21 @@ pub fn ImageCropperModal(
                     span { class: "crop-zoom-label", {app.tr("crop_zoom")} }
                     button {
                         class: "btn-zoom-step",
-                        onclick: move |_| zoom.set((zoom() - 0.1).max(min_limit)),
+                        onclick: move |_| {
+                            let new_z = (zoom() - 0.1).clamp(min_limit, 3.0);
+                            zoom.set(new_z);
+                            let (clamped_x, clamped_y) = clamp_pan(
+                                pan_x(),
+                                pan_y(),
+                                new_z,
+                                rendered_w,
+                                rendered_h,
+                                view_w,
+                                view_h,
+                            );
+                            pan_x.set(clamped_x);
+                            pan_y.set(clamped_y);
+                        },
                         "−"
                     }
                     input {
@@ -545,13 +614,39 @@ pub fn ImageCropperModal(
                         value: "{zoom()}",
                         oninput: move |e| {
                             if let Ok(v) = e.value().parse::<f64>() {
-                                zoom.set(v);
+                                let new_z = v.clamp(min_limit, 3.0);
+                                zoom.set(new_z);
+                                let (clamped_x, clamped_y) = clamp_pan(
+                                    pan_x(),
+                                    pan_y(),
+                                    new_z,
+                                    rendered_w,
+                                    rendered_h,
+                                    view_w,
+                                    view_h,
+                                );
+                                pan_x.set(clamped_x);
+                                pan_y.set(clamped_y);
                             }
                         }
                     }
                     button {
                         class: "btn-zoom-step",
-                        onclick: move |_| zoom.set((zoom() + 0.1).min(3.0)),
+                        onclick: move |_| {
+                            let new_z = (zoom() + 0.1).clamp(min_limit, 3.0);
+                            zoom.set(new_z);
+                            let (clamped_x, clamped_y) = clamp_pan(
+                                pan_x(),
+                                pan_y(),
+                                new_z,
+                                rendered_w,
+                                rendered_h,
+                                view_w,
+                                view_h,
+                            );
+                            pan_x.set(clamped_x);
+                            pan_y.set(clamped_y);
+                        },
                         "+"
                     }
                 }

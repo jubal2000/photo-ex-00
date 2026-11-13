@@ -1,6 +1,7 @@
 //! Platform abstraction: time, sleeping, opening URLs, key-value storage,
 //! secure (token) storage and biometric authentication.
 
+pub mod apple_auth;
 pub mod biometric;
 pub mod image_picker;
 pub mod storage;

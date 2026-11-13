@@ -99,6 +99,33 @@ pub fn Login() -> Element {
         });
     };
 
+    let handle_apple_login = move || {
+        #[cfg(target_os = "ios")]
+        {
+            spawn(async move {
+                busy.set(true);
+                match platform::apple_auth::sign_in_native().await {
+                    Ok(s) => {
+                        storage::remove("pe_pending_session");
+                        storage::remove("pe_pending_provider");
+                        app.on_signed_in(s, remember());
+                    }
+                    Err(e) => {
+                        let msg = format!("{e}");
+                        if !msg.contains("cancelled") && !msg.contains("Canceled") && !msg.contains("취소") {
+                            app.show_error(&e);
+                        }
+                    }
+                }
+                busy.set(false);
+            });
+        }
+        #[cfg(not(target_os = "ios"))]
+        {
+            social(Provider::Apple);
+        }
+    };
+
     rsx! {
         div { class: "login",
             img { class: "login-logo", src: LOGO, alt: "logo" }
@@ -114,7 +141,7 @@ pub fn Login() -> Element {
                     }
                     button { class: "btn btn-google", onclick: move |_| social(Provider::Google),
                         span { class: "provider-icon", "G" } {app.tr("login_google")} }
-                    button { class: "btn btn-apple", onclick: move |_| social(Provider::Apple),
+                    button { class: "btn btn-apple", onclick: move |_| handle_apple_login(),
                         span { class: "provider-icon", "" } {app.tr("login_apple")} }
                     button { class: "btn btn-kakao", onclick: move |_| social(Provider::Kakao),
                         span { class: "provider-icon", "K" } {app.tr("login_kakao")} }

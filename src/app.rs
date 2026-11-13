@@ -76,53 +76,70 @@ pub fn App() -> Element {
         });
     });
 
+    // Web: the auth popup hands the refresh token back via postMessage (or a cross-tab
+    // `storage` event). Those JS callbacks run outside the Dioxus runtime, where calling
+    // `spawn` panics and freezes the app on the spinner. So the callbacks only push the
+    // token into a channel, and a task spawned here (inside the runtime) finishes sign-in.
     #[cfg(target_arch = "wasm32")]
     use_hook(move || {
+        use futures_util::StreamExt;
         use wasm_bindgen::closure::Closure;
         use wasm_bindgen::JsCast;
-        if let Some(w) = web_sys::window() {
-            let cb = Closure::wrap(Box::new(move |e: web_sys::MessageEvent| {
-                if let Ok(txt) = js_sys::JSON::stringify(&e.data()) {
-                    let s: String = txt.into();
-                    if s.contains("PHOTO_EXCHANGER_AUTH") {
-                        if let Ok(val) = serde_json::from_str::<serde_json::Value>(&s) {
-                            if let Some(rt) = val.get("refreshToken").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
-                                let prov = val.get("provider").and_then(|v| v.as_str()).unwrap_or("google").to_string();
-                                let rt_owned = rt.to_string();
-                                storage::remove("pe_pending_session");
-                                storage::remove("pe_pending_provider");
-                                spawn(async move {
-                                    if let Ok(sess) = auth::refresh(&rt_owned, &prov).await {
-                                        let auto = pref_bool(KEY_AUTO, true);
-                                        app.on_signed_in(sess, auto);
-                                    }
-                                });
-                            }
+
+        let (tx, mut rx) = futures_channel::mpsc::unbounded::<(String, String)>();
+        spawn(async move {
+            while let Some((rt, prov)) = rx.next().await {
+                if app.session.peek().is_some() {
+                    continue;
+                }
+                match auth::refresh(&rt, &prov).await {
+                    Ok(sess) => {
+                        if app.session.peek().is_none() {
+                            app.on_signed_in(sess, pref_bool(KEY_AUTO, true));
                         }
                     }
+                    Err(e) => {
+                        if app.session.peek().is_none() {
+                            app.show_error(&e);
+                        }
+                    }
+                }
+            }
+        });
+
+        fn extract(json: &str) -> Option<(String, String)> {
+            let val = serde_json::from_str::<serde_json::Value>(json).ok()?;
+            let rt = val.get("refreshToken")?.as_str().filter(|s| !s.is_empty())?.to_string();
+            let prov = val.get("provider").and_then(|v| v.as_str()).unwrap_or("google").to_string();
+            Some((rt, prov))
+        }
+
+        if let Some(w) = web_sys::window() {
+            let tx_msg = tx.clone();
+            let cb = Closure::wrap(Box::new(move |e: web_sys::MessageEvent| {
+                let Ok(txt) = js_sys::JSON::stringify(&e.data()) else { return };
+                let s: String = txt.into();
+                if !s.contains("PHOTO_EXCHANGER_AUTH") {
+                    return;
+                }
+                if let Some(pair) = extract(&s) {
+                    storage::remove("pe_pending_session");
+                    storage::remove("pe_pending_provider");
+                    let _ = tx_msg.unbounded_send(pair);
                 }
             }) as Box<dyn FnMut(_)>);
             let _ = w.add_event_listener_with_callback("message", cb.as_ref().unchecked_ref());
             cb.forget();
 
+            let tx_sync = tx;
             let cb_storage = Closure::wrap(Box::new(move |e: web_sys::StorageEvent| {
-                if e.key().as_deref() == Some("pe_auth_sync") {
-                    if let Some(new_val) = e.new_value() {
-                        if let Ok(val) = serde_json::from_str::<serde_json::Value>(&new_val) {
-                            if let Some(rt) = val.get("refreshToken").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
-                                let prov = val.get("provider").and_then(|v| v.as_str()).unwrap_or("google").to_string();
-                                let rt_owned = rt.to_string();
-                                storage::remove("pe_pending_session");
-                                storage::remove("pe_pending_provider");
-                                spawn(async move {
-                                    if let Ok(sess) = auth::refresh(&rt_owned, &prov).await {
-                                        let auto = pref_bool(KEY_AUTO, true);
-                                        app.on_signed_in(sess, auto);
-                                    }
-                                });
-                            }
-                        }
-                    }
+                if e.key().as_deref() != Some("pe_auth_sync") {
+                    return;
+                }
+                if let Some(pair) = e.new_value().as_deref().and_then(extract) {
+                    storage::remove("pe_pending_session");
+                    storage::remove("pe_pending_provider");
+                    let _ = tx_sync.unbounded_send(pair);
                 }
             }) as Box<dyn FnMut(_)>);
             let _ = w.add_event_listener_with_callback("storage", cb_storage.as_ref().unchecked_ref());

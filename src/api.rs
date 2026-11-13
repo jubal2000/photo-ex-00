@@ -24,7 +24,11 @@ pub async fn load_catalog(tok: &str) -> R<Catalog> {
     cat.artists.sort_by(|x, y| x.name_lower.cmp(&y.name_lower));
     cat.categories.sort_by(|x, y| x.name_lower.cmp(&y.name_lower));
     cat.series.sort_by(|x, y| x.name_lower.cmp(&y.name_lower));
-    cat.cards.sort_by(|x, y| x.name_lower.cmp(&y.name_lower));
+    cat.cards.sort_by(|x, y| {
+        x.sort_order
+            .cmp(&y.sort_order)
+            .then_with(|| x.name_lower.cmp(&y.name_lower))
+    });
     Ok(cat)
 }
 
@@ -125,6 +129,14 @@ pub async fn create_card(tok: &str, uid: &str, cat: &Catalog, series_id: &str, n
         return Err(CreateError::Duplicate);
     }
     let s = cat.series_of(series_id).cloned().unwrap_or_default();
+    let next_sort_order = cat
+        .cards
+        .iter()
+        .filter(|c| c.series_id == series_id)
+        .map(|c| c.sort_order)
+        .max()
+        .map(|m| m + 1)
+        .unwrap_or(0);
     let c = Card {
         artist_id: s.artist_id,
         category_id: s.category_id,
@@ -132,11 +144,28 @@ pub async fn create_card(tok: &str, uid: &str, cat: &Catalog, series_id: &str, n
         name: name.trim().into(),
         name_lower: lower,
         image_url: image_url.into(),
+        sort_order: next_sort_order,
         created_by: uid.into(),
         created_at: now_secs(),
         ..Default::default()
     };
     Ok(fs::add(tok, "cards", &c).await?)
+}
+
+pub async fn update_card_sort_orders(tok: &str, updates: &[(String, i64)]) -> R<()> {
+    let futures = updates.iter().map(|(card_id, order)| {
+        let mut fields = Map::new();
+        fields.insert("sortOrder".into(), json!(order));
+        let path = format!("cards/{card_id}");
+        async move {
+            fs::update_fields(tok, &path, fields).await
+        }
+    });
+    let results = futures_util::future::join_all(futures).await;
+    for r in results {
+        r?;
+    }
+    Ok(())
 }
 
 pub async fn update_card(

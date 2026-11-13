@@ -4,9 +4,10 @@ use crate::api;
 use crate::app::reload_catalog;
 use crate::components::{CropShape, ImageCropperModal, UploadProgressOverlay, read_image_data_url};
 use crate::firebase::storage;
+use crate::models::Card;
 use crate::state::*;
 
-/// Edit an existing series: name, representative image, and description.
+/// Edit an existing series: name, representative image, description, and card order.
 #[component]
 pub fn EditSeries(series_id: String) -> Element {
     let mut app = use_app();
@@ -22,9 +23,19 @@ pub fn EditSeries(series_id: String) -> Element {
         };
     };
 
+    let initial_cards: Vec<Card> = catalog
+        .cards
+        .iter()
+        .filter(|c| c.series_id == series_id)
+        .cloned()
+        .collect();
+
     let mut name = use_signal(|| orig.name.clone());
     let mut image_url = use_signal(|| orig.image_url.clone());
     let mut description = use_signal(|| orig.description.clone());
+    let mut cards_list = use_signal(|| initial_cards);
+    let mut dragged_idx = use_signal(|| None::<usize>);
+    let mut drag_over_idx = use_signal(|| None::<usize>);
     let mut busy = use_signal(|| false);
     let mut crop_img = use_signal(|| None::<String>);
     let mut upload_progress = use_signal(|| None::<u8>);
@@ -66,16 +77,33 @@ pub fn EditSeries(series_id: String) -> Element {
             return;
         }
         let sid = sid.clone();
+        let current_cards = cards_list();
         spawn(async move {
             busy.set(true);
             let res = match app.token().await {
-                Ok(tok) => api::update_series(
-                    &tok,
-                    &sid,
-                    &name(),
-                    &image_url(),
-                    &description(),
-                ).await,
+                Ok(tok) => {
+                    let r1 = api::update_series(
+                        &tok,
+                        &sid,
+                        &name(),
+                        &image_url(),
+                        &description(),
+                    ).await;
+                    if let Err(e) = r1 {
+                        Err(e)
+                    } else {
+                        let updates: Vec<(String, i64)> = current_cards
+                            .iter()
+                            .enumerate()
+                            .map(|(idx, c)| (c.id.clone(), idx as i64))
+                            .collect();
+                        if !updates.is_empty() {
+                            api::update_card_sort_orders(&tok, &updates).await
+                        } else {
+                            Ok(())
+                        }
+                    }
+                }
                 Err(e) => Err(e),
             };
             match res {
@@ -158,6 +186,99 @@ pub fn EditSeries(series_id: String) -> Element {
                     placeholder: app.tr("description_placeholder"),
                     value: "{description}",
                     oninput: move |e| description.set(e.value())
+                }
+            }
+
+            // Card Order Horizontal Scroll Section
+            div { class: "series-card-order-section",
+                div { class: "series-card-order-header",
+                    span { class: "series-card-order-title", {app.tr("series_card_order")} }
+                    span { class: "series-card-order-hint", {app.tr("series_card_order_hint")} }
+                }
+                if cards_list().is_empty() {
+                    div { class: "series-card-order-empty", {app.tr("no_cards_in_series")} }
+                } else {
+                    div { class: "series-cards-hscroll-wrap",
+                        div { class: "series-cards-hscroll",
+                            for (idx, card) in cards_list().into_iter().enumerate() {
+                                {
+                                    let is_dragging = dragged_idx() == Some(idx);
+                                    let is_over = drag_over_idx() == Some(idx);
+                                    let total_len = cards_list().len();
+                                    let cid = card.id.clone();
+                                    rsx! {
+                                        div {
+                                            key: "{cid}",
+                                            class: format!("series-card-order-item {}", if is_dragging { "is-dragging" } else if is_over { "is-drag-over" } else { "" }),
+                                            draggable: "true",
+                                            ondragstart: move |_| {
+                                                dragged_idx.set(Some(idx));
+                                            },
+                                            ondragover: move |e| {
+                                                e.prevent_default();
+                                                if drag_over_idx() != Some(idx) {
+                                                    drag_over_idx.set(Some(idx));
+                                                }
+                                            },
+                                            ondragleave: move |_| {
+                                                if drag_over_idx() == Some(idx) {
+                                                    drag_over_idx.set(None);
+                                                }
+                                            },
+                                            ondrop: move |e| {
+                                                e.prevent_default();
+                                                if let Some(src) = dragged_idx() {
+                                                    if src != idx {
+                                                        let mut list = cards_list();
+                                                        let item = list.remove(src);
+                                                        list.insert(idx, item);
+                                                        cards_list.set(list);
+                                                    }
+                                                }
+                                                dragged_idx.set(None);
+                                                drag_over_idx.set(None);
+                                            },
+                                            span { class: "series-card-order-badge", "#{idx + 1}" }
+                                            div { class: "series-card-order-thumb-wrap",
+                                                if !card.image_url.trim().is_empty() {
+                                                    img { class: "series-card-order-thumb", src: "{card.image_url}", alt: "{card.name}" }
+                                                }
+                                            }
+                                            div { class: "series-card-order-name", title: "{card.name}", "{card.name}" }
+                                            div { class: "series-card-order-controls",
+                                                button {
+                                                    class: "btn-order-move",
+                                                    r#type: "button",
+                                                    disabled: idx == 0,
+                                                    onclick: move |_| {
+                                                        if idx > 0 {
+                                                            let mut list = cards_list();
+                                                            list.swap(idx, idx - 1);
+                                                            cards_list.set(list);
+                                                        }
+                                                    },
+                                                    "‹"
+                                                }
+                                                button {
+                                                    class: "btn-order-move",
+                                                    r#type: "button",
+                                                    disabled: idx + 1 >= total_len,
+                                                    onclick: move |_| {
+                                                        let mut list = cards_list();
+                                                        if idx + 1 < list.len() {
+                                                            list.swap(idx, idx + 1);
+                                                            cards_list.set(list);
+                                                        }
+                                                    },
+                                                    "›"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

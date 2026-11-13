@@ -79,6 +79,7 @@ pub struct Card {
     pub description: String,
     pub title_font: String,
     pub title_color: String,
+    pub sort_order: i64,
     pub created_by: String,
     pub created_at: u64,
 }

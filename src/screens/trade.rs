@@ -171,7 +171,9 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
             if ser_cmp != std::cmp::Ordering::Equal {
                 return ser_cmp;
             }
-            a.name_lower.cmp(&b.name_lower)
+            a.sort_order
+                .cmp(&b.sort_order)
+                .then_with(|| a.name_lower.cmp(&b.name_lower))
         });
         cards
     };

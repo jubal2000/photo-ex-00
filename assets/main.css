@@ -295,6 +295,21 @@ img { display: block; }
 }
 textarea.input { resize: vertical; }
 .field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600; color: #ded9e8; }
+.field-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.field-error-msg {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--danger);
+}
+input.input.input-error {
+  border-color: var(--danger) !important;
+  box-shadow: 0 0 0 1px var(--danger);
+}
 .check { display: flex; gap: 8px; align-items: center; font-size: 14px; color: #cfcad8; }
 
 .segmented {

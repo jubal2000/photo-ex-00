@@ -232,6 +232,8 @@ strings! {
     "series_card_order" => ["카드 순서 변경", "Card Order", "カードの順番", "卡片顺序", "Orden de cartas"],
     "series_card_order_hint" => ["드래그하거나 화살표를 눌러 순서를 변경하세요 (왼쪽이 1순위)", "Drag or click arrows to reorder (left is 1st)", "ドラッグまたは矢印をクリックして順番を変更してください（左が1位）", "拖拽或点击箭头调整顺序（左侧优先）", "Arrastra o pulsa las flechas para reordenar (izquierda es prioridad)"],
     "no_cards_in_series" => ["등록된 카드가 없습니다", "No cards registered", "登録されたカードがありません", "暂无卡片", "No hay cartas"],
+    "card_default_prefix" => ["카드", "Card", "カード", "卡片", "Carta"],
+    "duplicate_name_warning" => ["이미 존재하는 이름입니다", "This name already exists", "既に存在する名前です", "该名称已存在", "Este nombre ya existe"],
 }
 
 /// Simple `{name}` placeholder substitution.

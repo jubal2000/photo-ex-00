@@ -4,6 +4,7 @@ use crate::api::{self, CreateError};
 use crate::app::reload_catalog;
 use crate::components::{ArtistAvatar, CropShape, ImageCropperModal, UploadProgressOverlay, read_image_data_url};
 use crate::firebase::storage;
+use crate::models::Catalog;
 use crate::state::*;
 
 const PRESET_COLORS: &[&str] = &[
@@ -23,6 +24,36 @@ enum Kind {
     Category,
     Series,
     Card,
+}
+
+fn is_auto_card_name(name: &str, prefix: &str) -> bool {
+    let t = name.trim();
+    let prefix = if prefix.is_empty() { "카드" } else { prefix };
+    if let Some(rest) = t.strip_prefix(prefix) {
+        let rest_trimmed = rest.trim();
+        !rest_trimmed.is_empty() && rest_trimmed.chars().all(|c| c.is_ascii_digit())
+    } else {
+        false
+    }
+}
+
+fn next_default_card_name(catalog: &Catalog, series_id: &str, prefix: &str) -> String {
+    let prefix = if prefix.is_empty() { "카드" } else { prefix };
+    let existing_lower: std::collections::HashSet<String> = catalog
+        .cards
+        .iter()
+        .filter(|c| c.series_id == series_id)
+        .map(|c| c.name_lower.clone())
+        .collect();
+
+    let mut n = 1;
+    loop {
+        let candidate = format!("{prefix} {n}");
+        if !existing_lower.contains(&candidate.to_lowercase()) {
+            return candidate;
+        }
+        n += 1;
+    }
 }
 
 /// Create a new artist / category / series / card in the shared catalogue.
@@ -50,6 +81,21 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
     let mut upload_progress = use_signal(|| None::<u8>);
 
     let catalog = app.catalog.read().clone();
+
+    // Auto-populate default card name when series becomes available
+    use_effect(move || {
+        if kind() == Kind::Card {
+            let sid = series();
+            if !sid.is_empty() {
+                let cur = name();
+                if cur.trim().is_empty() {
+                    let cat = app.catalog.read().clone();
+                    let def_n = next_default_card_name(&cat, &sid, app.tr("card_default_prefix"));
+                    name.set(def_n);
+                }
+            }
+        }
+    });
 
     let on_image = move |e: Event<FormData>| {
         spawn(async move {
@@ -92,6 +138,41 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
         });
     };
 
+    // Realtime duplicate name checking
+    let cur_name = name().trim().to_string();
+    let norm_name = cur_name.to_lowercase();
+    let is_duplicate = if norm_name.is_empty() {
+        false
+    } else {
+        match kind() {
+            Kind::Artist => {
+                catalog.artists.iter().any(|a| a.name_lower == norm_name)
+            }
+            Kind::Category => {
+                let aid = artist();
+                catalog.categories.iter().any(|c| {
+                    (c.artist_id == aid || c.artist_id.is_empty()) && c.name_lower == norm_name
+                })
+            }
+            Kind::Series => {
+                let cat_id = category();
+                catalog.series.iter().any(|s| {
+                    s.category_id == cat_id && s.name_lower == norm_name
+                })
+            }
+            Kind::Card => {
+                let sid = series();
+                if sid.is_empty() {
+                    false
+                } else {
+                    catalog.cards.iter().any(|c| {
+                        c.series_id == sid && c.name_lower == norm_name
+                    })
+                }
+            }
+        }
+    };
+
     let submit = move |_| {
         let k = kind();
         let n = name().trim().to_string();
@@ -101,11 +182,12 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
             Kind::Series => artist().is_empty() || category().is_empty(),
             Kind::Card => series().is_empty(),
         };
-        if n.is_empty() || parent_missing {
+        if n.is_empty() || parent_missing || is_duplicate {
             app.show_toast(app.tr("required"));
             return;
         }
         let cur_color = artist_color();
+        let cur_series = series();
         spawn(async move {
             busy.set(true);
             let uid = app.uid();
@@ -116,14 +198,20 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
                     Kind::Artist => api::create_artist(&tok, &uid, &cat, &n, &image_url(), &cur_color).await,
                     Kind::Category => api::create_category(&tok, &uid, &cat, &artist(), &n, &image_url()).await,
                     Kind::Series => api::create_series(&tok, &uid, &cat, &artist(), &category(), &n, &image_url()).await,
-                    Kind::Card => api::create_card(&tok, &uid, &cat, &series(), &n, &image_url()).await,
+                    Kind::Card => api::create_card(&tok, &uid, &cat, &cur_series, &n, &image_url()).await,
                 },
             };
             match res {
                 Ok(_) => {
-                    name.set(String::new());
-                    image_url.set(String::new());
                     reload_catalog(app).await;
+                    let refreshed_cat = app.catalog.read().clone();
+                    if k == Kind::Card && !cur_series.is_empty() {
+                        let next_name = next_default_card_name(&refreshed_cat, &cur_series, app.tr("card_default_prefix"));
+                        name.set(next_name);
+                    } else {
+                        name.set(String::new());
+                    }
+                    image_url.set(String::new());
                     app.show_toast(app.tr("created"));
                 }
                 Err(CreateError::Duplicate) => app.show_toast(app.tr("duplicate")),
@@ -139,8 +227,22 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
             button {
                 class: if kind() == kk { "on" } else { "" },
                 onclick: move |_| {
+                    let prev_k = kind();
                     kind.set(kk);
                     image_url.set(String::new());
+                    if kk == Kind::Card {
+                        let sid = series();
+                        if !sid.is_empty() {
+                            let cur = name();
+                            if cur.trim().is_empty() {
+                                let cat = app.catalog.read();
+                                let def_n = next_default_card_name(&cat, &sid, app.tr("card_default_prefix"));
+                                name.set(def_n);
+                            }
+                        }
+                    } else if prev_k == Kind::Card && is_auto_card_name(&name(), app.tr("card_default_prefix")) {
+                        name.set(String::new());
+                    }
                 },
                 {app.tr(label)}
             }
@@ -167,7 +269,14 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
                         }
                     }
                     select { class: "input", value: "{artist}",
-                        onchange: move |e| { artist.set(e.value()); category.set(String::new()); series.set(String::new()); },
+                        onchange: move |e| {
+                            artist.set(e.value());
+                            category.set(String::new());
+                            series.set(String::new());
+                            if k == Kind::Card && is_auto_card_name(&name(), app.tr("card_default_prefix")) {
+                                name.set(String::new());
+                            }
+                        },
                         option { value: "", {if k == Kind::Category { app.tr("all_artists_common") } else { app.tr("select")}} }
                         for a in catalog.artists.iter() { option { key: "{a.id}", value: "{a.id}", selected: a.id == artist(), "{a.name}" } }
                     }
@@ -176,7 +285,13 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
             if k == Kind::Series || k == Kind::Card {
                 label { class: "field", span { {app.tr("category")} " *" }
                     select { class: "input", value: "{category}", disabled: artist().is_empty(),
-                        onchange: move |e| { category.set(e.value()); series.set(String::new()); },
+                        onchange: move |e| {
+                            category.set(e.value());
+                            series.set(String::new());
+                            if k == Kind::Card && is_auto_card_name(&name(), app.tr("card_default_prefix")) {
+                                name.set(String::new());
+                            }
+                        },
                         option { value: "", {app.tr("select")} }
                         for c in catalog.categories.iter().filter(|c| c.artist_id.is_empty() || c.artist_id == artist()) {
                             option { key: "{c.id}", value: "{c.id}", selected: c.id == category(),
@@ -190,7 +305,20 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
             if k == Kind::Card {
                 label { class: "field", span { {app.tr("series")} " *" }
                     select { class: "input", value: "{series}", disabled: category().is_empty(),
-                        onchange: move |e| series.set(e.value()),
+                        onchange: move |e| {
+                            let new_sid = e.value();
+                            series.set(new_sid.clone());
+                            if !new_sid.is_empty() {
+                                let cat = app.catalog.read();
+                                let default_n = next_default_card_name(&cat, &new_sid, app.tr("card_default_prefix"));
+                                let cur = name();
+                                if cur.trim().is_empty() || is_auto_card_name(&cur, app.tr("card_default_prefix")) {
+                                    name.set(default_n);
+                                }
+                            } else if is_auto_card_name(&name(), app.tr("card_default_prefix")) {
+                                name.set(String::new());
+                            }
+                        },
                         option { value: "", {app.tr("select")} }
                         for s in catalog.series.iter().filter(|s| s.category_id == category() && (artist().is_empty() || s.artist_id == artist())) {
                             option { key: "{s.id}", value: "{s.id}", selected: s.id == series(), "{s.name}" }
@@ -199,8 +327,20 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
                 }
             }
 
-            label { class: "field", span { {app.tr("name")} " *" }
-                input { class: "input", value: "{name}", maxlength: 60, oninput: move |e| name.set(e.value()) }
+            label { class: "field",
+                div { class: "field-header",
+                    span { {app.tr("name")} " *" }
+                    if is_duplicate {
+                        span { class: "field-error-msg", {app.tr("duplicate_name_warning")} }
+                    }
+                }
+                input {
+                    class: if is_duplicate { "input input-error" } else { "input" },
+                    value: "{name}",
+                    maxlength: 60,
+                    placeholder: if k == Kind::Card { "카드 1" } else { "" },
+                    oninput: move |e| name.set(e.value())
+                }
             }
 
             if k == Kind::Artist {
@@ -286,7 +426,7 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
                 }
             }
 
-            button { class: "btn btn-primary block", disabled: busy() || upload_progress().is_some(), onclick: submit, {app.tr("create_btn")} }
+            button { class: "btn btn-primary block", disabled: busy() || upload_progress().is_some() || is_duplicate, onclick: submit, {app.tr("create_btn")} }
 
             if let Some(src) = crop_img() {
                 {

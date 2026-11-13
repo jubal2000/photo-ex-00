@@ -1,5 +1,6 @@
 //! Trades Screen: Trade Requests & Accepted Trade History with tabs.
 
+use std::collections::HashSet;
 use std::rc::Rc;
 use dioxus::prelude::*;
 
@@ -7,7 +8,21 @@ use crate::api;
 use crate::app::reload_holdings;
 use crate::components::CardThumb;
 use crate::models::{Trade, TradeItem};
+use crate::platform::storage;
 use crate::state::*;
+
+const KEY_BLOCKED_USERS: &str = "pe_blocked_users";
+
+fn load_cached_blocked() -> HashSet<String> {
+    storage::get(KEY_BLOCKED_USERS)
+        .map(|s| s.split(',').filter(|x| !x.is_empty()).map(|x| x.to_string()).collect())
+        .unwrap_or_default()
+}
+
+fn save_cached_blocked(set: &HashSet<String>) {
+    let joined = set.iter().cloned().collect::<Vec<_>>().join(",");
+    storage::set(KEY_BLOCKED_USERS, &joined);
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum TradeTab {
@@ -31,6 +46,29 @@ pub fn TradesScreen() -> Element {
     let mut success_trade = use_signal(|| None::<(Trade, String)>);
     let mut active_chat = use_signal(|| None::<(Trade, String, String)>); // (trade, partner_name, partner_uid)
     let mut confirm_complete = use_signal(|| None::<(Trade, String)>); // (trade, partner_name)
+    let mut confirm_block = use_signal(|| None::<(String, String)>); // (partner_uid, partner_name)
+    let mut report_target = use_signal(|| None::<(String, String, Option<String>)>); // (partner_uid, partner_name, Option<trade_id>)
+
+    let mut blocked_set = use_signal(load_cached_blocked);
+
+    // Sync blocked users from Firestore
+    let _remote_blocks = use_resource(move || async move {
+        let uid = app.uid();
+        let Ok(tok) = app.token().await else { return };
+        if let Ok(remote) = api::load_blocked_users(&tok, &uid).await {
+            let mut cur = blocked_set();
+            let mut changed = false;
+            for b in remote {
+                if cur.insert(b) {
+                    changed = true;
+                }
+            }
+            if changed {
+                save_cached_blocked(&cur);
+                blocked_set.set(cur);
+            }
+        }
+    });
 
     let mut trades = use_resource(move || async move {
         let uid = app.uid();
@@ -120,17 +158,28 @@ pub fn TradesScreen() -> Element {
         });
     });
 
-    // Pending requests
-    let pending_inbox: Vec<Trade> = inbox.iter().filter(|t| t.status == "pending").cloned().collect();
-    let pending_outbox: Vec<Trade> = outbox.iter().filter(|t| t.status == "pending").cloned().collect();
+    // Blocked set snapshot
+    let blocked = blocked_set.read().clone();
+
+    // Pending requests (filtered by blocked users)
+    let pending_inbox: Vec<Trade> = inbox
+        .iter()
+        .filter(|t| t.status == "pending" && !blocked.contains(&t.from_uid))
+        .cloned()
+        .collect();
+    let pending_outbox: Vec<Trade> = outbox
+        .iter()
+        .filter(|t| t.status == "pending" && !blocked.contains(&t.to_uid))
+        .cloned()
+        .collect();
     let pending_count = pending_inbox.len() + pending_outbox.len();
 
-    // Accepted & Completed trades (both inbox & outbox)
+    // Accepted & Completed trades (both inbox & outbox, filtered by blocked users)
     let mut accepted_trades: Vec<(Trade, bool)> = Vec::new();
-    for t in inbox.iter().filter(|t| t.status == "accepted" || t.status == "completed") {
+    for t in inbox.iter().filter(|t| (t.status == "accepted" || t.status == "completed") && !blocked.contains(&t.from_uid)) {
         accepted_trades.push((t.clone(), true));
     }
-    for t in outbox.iter().filter(|t| t.status == "accepted" || t.status == "completed") {
+    for t in outbox.iter().filter(|t| (t.status == "accepted" || t.status == "completed") && !blocked.contains(&t.to_uid)) {
         accepted_trades.push((t.clone(), false));
     }
     // Sort descending by created_at
@@ -195,16 +244,26 @@ pub fn TradesScreen() -> Element {
                                     let act_c = Rc::clone(&act);
                                     let who = name_of(&t.from_uid);
                                     let puid = t.from_uid.clone();
+                                    let tid = t.id.clone();
                                     rsx! {
                                         TradeCard {
                                             key: "{t.id}",
                                             trade: t.clone(),
-                                            who,
-                                            partner_uid: puid,
+                                            who: who.clone(),
+                                            partner_uid: puid.clone(),
                                             incoming: true,
                                             on_action: move |(id, a)| act_c(id, a),
                                             on_chat: move |_| {},
                                             on_complete: move |_| {},
+                                            on_report: {
+                                                let tid = tid.clone();
+                                                move |(puid, pname)| {
+                                                    report_target.set(Some((puid, pname, Some(tid.clone()))));
+                                                }
+                                            },
+                                            on_block: move |(puid, pname)| {
+                                                confirm_block.set(Some((puid, pname)));
+                                            },
                                         }
                                     }
                                 }
@@ -222,16 +281,26 @@ pub fn TradesScreen() -> Element {
                                     let act_c = Rc::clone(&act);
                                     let who = name_of(&t.to_uid);
                                     let puid = t.to_uid.clone();
+                                    let tid = t.id.clone();
                                     rsx! {
                                         TradeCard {
                                             key: "{t.id}",
                                             trade: t.clone(),
-                                            who,
-                                            partner_uid: puid,
+                                            who: who.clone(),
+                                            partner_uid: puid.clone(),
                                             incoming: false,
                                             on_action: move |(id, a)| act_c(id, a),
                                             on_chat: move |_| {},
                                             on_complete: move |_| {},
+                                            on_report: {
+                                                let tid = tid.clone();
+                                                move |(puid, pname)| {
+                                                    report_target.set(Some((puid, pname, Some(tid.clone()))));
+                                                }
+                                            },
+                                            on_block: move |(puid, pname)| {
+                                                confirm_block.set(Some((puid, pname)));
+                                            },
                                         }
                                     }
                                 }
@@ -256,12 +325,13 @@ pub fn TradesScreen() -> Element {
                                     let pname_chat = partner_name.clone();
                                     let pname_complete = partner_name.clone();
                                     let puid_chat = other_uid.clone();
+                                    let tid = t.id.clone();
                                     rsx! {
                                         TradeCard {
                                             key: "{t.id}",
                                             trade: t.clone(),
-                                            who: partner_name,
-                                            partner_uid: other_uid,
+                                            who: partner_name.clone(),
+                                            partner_uid: other_uid.clone(),
                                             incoming: *inc,
                                             on_action: move |(id, a)| act_c(id, a),
                                             on_chat: move |_| {
@@ -269,6 +339,15 @@ pub fn TradesScreen() -> Element {
                                             },
                                             on_complete: move |_| {
                                                 confirm_complete.set(Some((t_complete.clone(), pname_complete.clone())));
+                                            },
+                                            on_report: {
+                                                let tid = tid.clone();
+                                                move |(puid, pname)| {
+                                                    report_target.set(Some((puid, pname, Some(tid.clone()))));
+                                                }
+                                            },
+                                            on_block: move |(puid, pname)| {
+                                                confirm_block.set(Some((puid, pname)));
                                             },
                                         }
                                     }
@@ -319,6 +398,43 @@ pub fn TradesScreen() -> Element {
                 }
             }
 
+            // Confirm Block User Modal
+            if let Some((puid, pname)) = confirm_block() {
+                BlockConfirmModal {
+                    partner_name: pname.clone(),
+                    on_cancel: move |_| confirm_block.set(None),
+                    on_confirm: {
+                        let puid = puid.clone();
+                        move |_| {
+                            confirm_block.set(None);
+                            let mut cur = blocked_set();
+                            cur.insert(puid.clone());
+                            save_cached_blocked(&cur);
+                            blocked_set.set(cur);
+                            app.show_toast(app.tr("block_success"));
+                            let puid_c = puid.clone();
+                            spawn(async move {
+                                if let Ok(tok) = app.token().await {
+                                    let my_uid = app.uid();
+                                    let _ = api::block_user(&tok, &my_uid, &puid_c).await;
+                                }
+                            });
+                        }
+                    },
+                }
+            }
+
+            // Report User Modal
+            if let Some((puid, pname, tid)) = report_target() {
+                ReportModal {
+                    partner_name: pname,
+                    partner_uid: puid,
+                    trade_id: tid,
+                    on_cancel: move |_| report_target.set(None),
+                    on_submitted: move |_| report_target.set(None),
+                }
+            }
+
             // Trade Chat Modal (Active Channel)
             if let Some((t, partner_name, partner_uid)) = active_chat() {
                 TradeChatModal {
@@ -341,10 +457,13 @@ fn TradeCard(
     on_action: EventHandler<(String, &'static str)>,
     on_chat: EventHandler<()>,
     on_complete: EventHandler<()>,
+    on_report: EventHandler<(String, String)>,
+    on_block: EventHandler<(String, String)>,
 ) -> Element {
     let app = use_app();
     let catalog = app.catalog.read().clone();
     let status_key = format!("status_{}", trade.status);
+    let mut show_menu = use_signal(|| false);
 
     // Perspective: what I receive (get) vs what I give (give)
     let (give, get): (&Vec<TradeItem>, &Vec<TradeItem>) = if incoming {
@@ -367,7 +486,57 @@ fn TradeCard(
                     }
                     span { class: "trade-user-name", "{who}" }
                 }
-                span { class: "pill status-{trade.status}", {app.tr(&status_key)} }
+                div { class: "trade-header-right",
+                    span { class: "pill status-{trade.status}", {app.tr(&status_key)} }
+                    div { class: "trade-more-menu-wrap",
+                        button {
+                            class: "trade-more-btn",
+                            title: "{app.tr(\"more\")}",
+                            onclick: move |e| {
+                                e.stop_propagation();
+                                show_menu.set(!show_menu());
+                            },
+                            "···"
+                        }
+                        if show_menu() {
+                            div {
+                                class: "trade-menu-backdrop",
+                                onclick: move |e| {
+                                    e.stop_propagation();
+                                    show_menu.set(false);
+                                },
+                            }
+                            div { class: "trade-dropdown-menu",
+                                button {
+                                    class: "trade-dropdown-item",
+                                    onclick: {
+                                        let puid = partner_uid.clone();
+                                        let w = who.clone();
+                                        move |e| {
+                                            e.stop_propagation();
+                                            show_menu.set(false);
+                                            on_report.call((puid.clone(), w.clone()));
+                                        }
+                                    },
+                                    {app.tr("report_user")}
+                                }
+                                button {
+                                    class: "trade-dropdown-item danger-text",
+                                    onclick: {
+                                        let puid = partner_uid.clone();
+                                        let w = who.clone();
+                                        move |e| {
+                                            e.stop_propagation();
+                                            show_menu.set(false);
+                                            on_block.call((puid.clone(), w.clone()));
+                                        }
+                                    },
+                                    {app.tr("block_user")}
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             div { class: "trade-card-contents",
@@ -733,5 +902,152 @@ fn send_chat_message(
         sending.set(false);
     });
 }
+
+#[component]
+fn BlockConfirmModal(
+    partner_name: String,
+    on_cancel: EventHandler<()>,
+    on_confirm: EventHandler<()>,
+) -> Element {
+    let app = use_app();
+    let desc = app.tf("block_confirm_desc", &[("user", partner_name.clone())]);
+    rsx! {
+        div { class: "modal-overlay", onclick: move |_| on_cancel.call(()),
+            div { class: "modal-card block-confirm-card", onclick: move |e| e.stop_propagation(),
+                h3 { class: "modal-title", {app.tr("block_confirm_title")} }
+                p { class: "block-confirm-desc", "{desc}" }
+                div { class: "modal-actions",
+                    button {
+                        class: "btn btn-outline",
+                        onclick: move |_| on_cancel.call(()),
+                        {app.tr("cancel")}
+                    }
+                    button {
+                        class: "btn btn-danger",
+                        onclick: move |_| on_confirm.call(()),
+                        {app.tr("block_user")}
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn ReportModal(
+    partner_name: String,
+    partner_uid: String,
+    trade_id: Option<String>,
+    on_cancel: EventHandler<()>,
+    on_submitted: EventHandler<()>,
+) -> Element {
+    let mut app = use_app();
+    let mut selected_reason = use_signal(|| "fraud".to_string());
+    let mut details = use_signal(String::new);
+    let mut is_submitting = use_signal(|| false);
+
+    let reasons = [
+        ("fraud", "report_reason_fraud"),
+        ("abuse", "report_reason_abuse"),
+        ("noshow", "report_reason_noshow"),
+        ("spam", "report_reason_spam"),
+        ("other", "report_reason_other"),
+    ];
+
+    rsx! {
+        div { class: "modal-overlay", onclick: move |_| on_cancel.call(()),
+            div { class: "modal-card report-modal-card", onclick: move |e| e.stop_propagation(),
+                div { class: "modal-header-row",
+                    h3 { class: "modal-title", "{partner_name} " {app.tr("report_modal_title")} }
+                    button {
+                        class: "modal-close-btn",
+                        onclick: move |_| on_cancel.call(()),
+                        "×"
+                    }
+                }
+
+                div { class: "report-section",
+                    label { class: "report-section-label", {app.tr("report_reason")} }
+                    div { class: "report-reason-list",
+                        for (code, key) in reasons {
+                            button {
+                                key: "{code}",
+                                class: if selected_reason() == code { "report-reason-chip active" } else { "report-reason-chip" },
+                                onclick: move |_| selected_reason.set(code.to_string()),
+                                {app.tr(key)}
+                            }
+                        }
+                    }
+                }
+
+                div { class: "report-section",
+                    label { class: "report-section-label", {app.tr("description")} }
+                    textarea {
+                        class: "report-textarea",
+                        placeholder: "{app.tr(\"report_details_placeholder\")}",
+                        value: "{details()}",
+                        oninput: move |e| details.set(e.value()),
+                        rows: 4,
+                    }
+                }
+
+                div { class: "modal-actions",
+                    button {
+                        class: "btn btn-outline",
+                        onclick: move |_| on_cancel.call(()),
+                        {app.tr("cancel")}
+                    }
+                    button {
+                        class: "btn btn-primary",
+                        disabled: is_submitting(),
+                        onclick: {
+                            let puid = partner_uid.clone();
+                            let tid = trade_id.clone();
+                            move |_| {
+                                let puid_c = puid.clone();
+                                let tid_c = tid.clone();
+                                let reason = selected_reason();
+                                let desc = details();
+                                is_submitting.set(true);
+                                spawn(async move {
+                                    let Ok(tok) = app.token().await else {
+                                        is_submitting.set(false);
+                                        return;
+                                    };
+                                    let my_uid = app.uid();
+                                    let report = crate::models::ReportEntry {
+                                        id: String::new(),
+                                        reporter_uid: my_uid,
+                                        target_uid: puid_c,
+                                        trade_id: tid_c,
+                                        reason,
+                                        details: desc,
+                                        created_at: crate::platform::now_secs(),
+                                    };
+                                    match api::submit_report(&tok, &report).await {
+                                        Ok(_) => {
+                                            is_submitting.set(false);
+                                            app.show_toast(app.tr("report_success"));
+                                            on_submitted.call(());
+                                        }
+                                        Err(e) => {
+                                            is_submitting.set(false);
+                                            app.show_error(&e);
+                                        }
+                                    }
+                                });
+                            }
+                        },
+                        if is_submitting() {
+                            span { class: "spinner small" }
+                        }
+                        {app.tr("report_submit")}
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 

@@ -469,6 +469,31 @@ pub async fn send_trade_message(
     fs::add(tok, &format!("trades/{trade_id}/messages"), &msg).await
 }
 
+// ---------------- moderation: block & report ----------------
+
+pub async fn block_user(tok: &str, my_uid: &str, target_uid: &str) -> R<()> {
+    let entry = BlockEntry {
+        id: target_uid.into(),
+        blocked_uid: target_uid.into(),
+        blocked_at: now_secs(),
+    };
+    fs::set(tok, &format!("users/{my_uid}/blocks/{target_uid}"), &entry).await
+}
+
+#[allow(dead_code)]
+pub async fn unblock_user(tok: &str, my_uid: &str, target_uid: &str) -> R<()> {
+    fs::delete(tok, &format!("users/{my_uid}/blocks/{target_uid}")).await
+}
+
+pub async fn load_blocked_users(tok: &str, my_uid: &str) -> R<HashSet<String>> {
+    let list = fs::list::<BlockEntry>(tok, &format!("users/{my_uid}/blocks")).await?;
+    Ok(list.into_iter().map(|b| b.blocked_uid).collect())
+}
+
+pub async fn submit_report(tok: &str, report: &ReportEntry) -> R<String> {
+    fs::add(tok, "reports", report).await
+}
+
 pub async fn load_global_card_counts(tok: &str, my_holdings: &[Holding]) -> HashMap<String, i64> {
     let mut map: HashMap<String, i64> = HashMap::new();
     for h in my_holdings {

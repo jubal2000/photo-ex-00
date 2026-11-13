@@ -144,6 +144,26 @@ pub struct ChatMessage {
     pub created_at: u64,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct BlockEntry {
+    pub id: String,
+    pub blocked_uid: String,
+    pub blocked_at: u64,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ReportEntry {
+    pub id: String,
+    pub reporter_uid: String,
+    pub target_uid: String,
+    pub trade_id: Option<String>,
+    pub reason: String,
+    pub details: String,
+    pub created_at: u64,
+}
+
 /// The full shared catalogue, loaded once and refreshed after creations.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Catalog {

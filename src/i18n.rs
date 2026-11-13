@@ -252,6 +252,22 @@ strings! {
     "chat_send" => ["전송", "Send", "送信", "发送", "Enviar"],
     "chat_title" => ["교환 대화", "Trade Chat", "交換チャット", "交换聊天", "Chat de intercambio"],
     "max_locations_reached" => ["최대 5개까지 추가할 수 있습니다", "Maximum 5 locations reached", "最大5か所まで追加できます", "最多添加5个地点", "Máximo 5 ubicaciones permitidas"],
+    "more" => ["더보기", "More", "その他", "更多", "Más"],
+    "block_user" => ["차단하기", "Block user", "ブロックする", "拉黑用户", "Bloquear usuario"],
+    "report_user" => ["신고하기", "Report user", "通報する", "举报用户", "Reportar usuario"],
+    "block_confirm_title" => ["사용자 차단", "Block user", "ユーザーのブロック", "拉黑用户", "Bloquear usuario"],
+    "block_confirm_desc" => ["{user} 님을 차단하시겠습니까? 차단하면 이 사용자의 교환 요청이 더 이상 표시되지 않습니다.", "Block {user}? Their trade requests will no longer be visible.", "{user}様をブロックしますか？ブロックするとこのユーザーの交換申請が表示されなくなります。", "确认拉黑 {user} 吗？拉黑后将不再显示该用户的交换请求。", "¿Bloquear a {user}? Sus solicitudes de intercambio ya no se mostrarán."],
+    "block_success" => ["차단되었습니다", "User blocked", "ブロックしました", "已拉黑", "Usuario bloqueado"],
+    "report_modal_title" => ["사용자 신고", "Report User", "ユーザーを通報", "举报用户", "Reportar usuario"],
+    "report_reason" => ["신고 사유", "Reason", "通報理由", "举报理由", "Motivo del reporte"],
+    "report_reason_fraud" => ["사기 / 비매너", "Fraud / Rude behavior", "詐欺・迷惑行為", "欺诈 / 不礼貌行为", "Fraude / Mala conducta"],
+    "report_reason_abuse" => ["욕설 / 부적절한 언어", "Abusive language", "暴言・不適切な言葉", "辱骂 / 不当言论", "Lenguaje ofensivo"],
+    "report_reason_noshow" => ["약속 불이행 / 잠수", "No-show / Broken promise", "ドタキャン・連絡途絶", "爽约 / 失联", "Incumplimiento de cita"],
+    "report_reason_spam" => ["광고 / 도배", "Spam / Advertising", "スパム・広告", "垃圾广告 / 刷屏", "Spam / Publicidad"],
+    "report_reason_other" => ["기타", "Other", "その他", "其他", "Otro"],
+    "report_details_placeholder" => ["구체적인 신고 내용을 적어주세요", "Please describe the issue in detail", "具体的な内容を入力してください", "请填写详细说明", "Describe los detalles por favor"],
+    "report_submit" => ["신고 접수", "Submit Report", "通報する", "提交举报", "Enviar reporte"],
+    "report_success" => ["신고가 접수되었습니다", "Report submitted", "通報を受け付けました", "举报已受理", "Reporte enviado"],
 }
 
 /// Simple `{name}` placeholder substitution.

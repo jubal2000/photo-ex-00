@@ -80,6 +80,10 @@ impl AppState {
         i18n::t(*self.lang.read(), key)
     }
 
+    pub fn tf(&self, key: &str, args: &[(&str, String)]) -> String {
+        i18n::tf(*self.lang.read(), key, args)
+    }
+
     pub fn uid(&self) -> String {
         self.session.read().as_ref().map(|s| s.uid.clone()).unwrap_or_default()
     }

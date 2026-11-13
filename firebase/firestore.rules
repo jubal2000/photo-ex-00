@@ -60,6 +60,15 @@ service cloud.firestore {
       match /groupVisibility/{key} {
         allow read, write: if isUser(uid);
       }
+      match /blocks/{blockedUid} {
+        allow read, write: if isUser(uid);
+      }
+    }
+
+    // ---- reports ----
+    match /reports/{id} {
+      allow create: if signedIn() && request.resource.data.reporterUid == request.auth.uid;
+      allow read, update, delete: if false;
     }
 
     // collection-group query used by the home screen / category offers

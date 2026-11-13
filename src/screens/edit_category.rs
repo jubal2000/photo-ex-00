@@ -121,7 +121,15 @@ pub fn EditCategory(category_id: String) -> Element {
 
             // Name
             label { class: "field", span { {app.tr("name")} " *" }
-                input { class: "input", value: "{name}", maxlength: 60, oninput: move |e| name.set(e.value()) }
+                input {
+                    class: "input",
+                    initial_value: "{name}",
+                    maxlength: 60,
+                    autocorrect: "off",
+                    autocapitalize: "off",
+                    spellcheck: "false",
+                    oninput: move |e| name.set(e.value()),
+                }
             }
 
             // Representative image
@@ -147,7 +155,15 @@ pub fn EditCategory(category_id: String) -> Element {
                         input { id: "edit-category-image-file-input", r#type: "file", accept: "image/*", onchange: on_image }
                     }
                 }
-                input { class: "input", placeholder: app.tr("image_url"), value: "{image_url}", oninput: move |e| image_url.set(e.value()) }
+                input {
+                    class: "input",
+                    placeholder: app.tr("image_url"),
+                    initial_value: "{image_url}",
+                    autocorrect: "off",
+                    autocapitalize: "off",
+                    spellcheck: "false",
+                    oninput: move |e| image_url.set(e.value()),
+                }
             }
 
             // Description
@@ -156,8 +172,11 @@ pub fn EditCategory(category_id: String) -> Element {
                     class: "input",
                     rows: 3,
                     placeholder: app.tr("description_placeholder"),
-                    value: "{description}",
-                    oninput: move |e| description.set(e.value())
+                    initial_value: "{description}",
+                    autocorrect: "off",
+                    autocapitalize: "off",
+                    spellcheck: "false",
+                    oninput: move |e| description.set(e.value()),
                 }
             }
 

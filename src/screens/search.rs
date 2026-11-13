@@ -56,9 +56,17 @@ pub fn Search() -> Element {
 
     rsx! {
         div { class: "page",
-            input { class: "input search-input", r#type: "search", autofocus: true,
-                placeholder: app.tr("search_placeholder"), value: "{keyword}",
-                oninput: move |e| keyword.set(e.value()) }
+            input {
+                class: "input search-input",
+                r#type: "search",
+                autofocus: true,
+                placeholder: app.tr("search_placeholder"),
+                initial_value: "{keyword}",
+                autocorrect: "off",
+                autocapitalize: "off",
+                spellcheck: "false",
+                oninput: move |e| keyword.set(e.value()),
+            }
             div { class: "filters",
                 div { class: "segmented",
                     button { class: if !owned_only() { "on" } else { "" }, onclick: move |_| owned_only.set(false), {app.tr("scope_all")} }

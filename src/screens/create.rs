@@ -336,10 +336,13 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
                 }
                 input {
                     class: if is_duplicate { "input input-error" } else { "input" },
-                    value: "{name}",
+                    initial_value: "{name}",
                     maxlength: 60,
                     placeholder: if k == Kind::Card { "카드 1" } else { "" },
-                    oninput: move |e| name.set(e.value())
+                    autocorrect: "off",
+                    autocapitalize: "off",
+                    spellcheck: "false",
+                    oninput: move |e| name.set(e.value()),
                 }
             }
 
@@ -397,7 +400,15 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
                             input { id: "create-artist-image-input", r#type: "file", accept: "image/*", onchange: on_image }
                         }
                     }
-                    input { class: "input", placeholder: app.tr("image_url"), value: "{image_url}", oninput: move |e| image_url.set(e.value()) }
+                    input {
+                        class: "input",
+                        placeholder: app.tr("image_url"),
+                        initial_value: "{image_url}",
+                        autocorrect: "off",
+                        autocapitalize: "off",
+                        spellcheck: "false",
+                        oninput: move |e| image_url.set(e.value()),
+                    }
                 }
             } else {
                 div { class: "field", span { {app.tr("representative_image")} }
@@ -422,7 +433,15 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
                             input { id: "create-item-image-input", r#type: "file", accept: "image/*", onchange: on_image }
                         }
                     }
-                    input { class: "input", placeholder: app.tr("image_url"), value: "{image_url}", oninput: move |e| image_url.set(e.value()) }
+                    input {
+                        class: "input",
+                        placeholder: app.tr("image_url"),
+                        initial_value: "{image_url}",
+                        autocorrect: "off",
+                        autocapitalize: "off",
+                        spellcheck: "false",
+                        oninput: move |e| image_url.set(e.value()),
+                    }
                 }
             }
 

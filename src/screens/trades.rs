@@ -675,11 +675,15 @@ fn TradeChatModal(
                 // Input Area
                 div { class: "chat-input-bar",
                     input {
+                        id: "trade-chat-input",
                         class: "input chat-input",
-                        value: "{input_text}",
+                        initial_value: "",
                         placeholder: app.tr("chat_placeholder"),
                         maxlength: 300,
                         disabled: sending(),
+                        autocorrect: "off",
+                        autocapitalize: "off",
+                        spellcheck: "false",
                         oninput: move |e| input_text.set(e.value()),
                         onkeydown: move |e: KeyboardEvent| {
                             if e.key() == Key::Enter {
@@ -721,6 +725,7 @@ fn send_chat_message(
         match api::send_trade_message(&tok, &trade_id, &uid, &my_name, &text).await {
             Ok(_) => {
                 input_text.set(String::new());
+                let _ = document::eval("let el = document.getElementById('trade-chat-input'); if (el) el.value = '';");
                 messages.restart();
             }
             Err(e) => app.show_error(&e),

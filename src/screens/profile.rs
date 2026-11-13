@@ -90,10 +90,27 @@ pub fn ProfileScreen() -> Element {
                 input { id: "profile-photo-file-input", r#type: "file", accept: "image/*", hidden: true, onchange: on_photo }
             }
             label { class: "field", span { {app.tr("nickname")} }
-                input { class: "input", value: "{nickname}", maxlength: 20, oninput: move |e| nickname.set(e.value()) }
+                input {
+                    class: "input",
+                    initial_value: "{nickname}",
+                    maxlength: 20,
+                    autocorrect: "off",
+                    autocapitalize: "off",
+                    spellcheck: "false",
+                    oninput: move |e| nickname.set(e.value()),
+                }
             }
             label { class: "field", span { {app.tr("greeting")} }
-                textarea { class: "input", rows: 2, maxlength: 100, value: "{greeting}", oninput: move |e| greeting.set(e.value()) }
+                textarea {
+                    class: "input",
+                    rows: 2,
+                    maxlength: 100,
+                    initial_value: "{greeting}",
+                    autocorrect: "off",
+                    autocapitalize: "off",
+                    spellcheck: "false",
+                    oninput: move |e| greeting.set(e.value()),
+                }
             }
             div { class: "field", span { {app.tr("fav_artists")} }
                 div { class: "chips",
@@ -118,11 +135,15 @@ pub fn ProfileScreen() -> Element {
                 }
                 div { class: "location-input-row",
                     input {
+                        id: "profile-new-location-input",
                         class: "input location-input",
-                        value: "{new_location_input}",
+                        initial_value: "",
                         placeholder: app.tr("location_placeholder"),
                         maxlength: 30,
                         disabled: locations.read().len() >= 5,
+                        autocorrect: "off",
+                        autocapitalize: "off",
+                        spellcheck: "false",
                         oninput: move |e| new_location_input.set(e.value()),
                         onkeydown: {
                             let mut app = app;
@@ -138,6 +159,7 @@ pub fn ProfileScreen() -> Element {
                                         locations.write().push(text);
                                     }
                                     new_location_input.set(String::new());
+                                    let _ = document::eval("let el = document.getElementById('profile-new-location-input'); if (el) el.value = '';");
                                 }
                             }
                         },
@@ -159,6 +181,7 @@ pub fn ProfileScreen() -> Element {
                                     locations.write().push(text);
                                 }
                                 new_location_input.set(String::new());
+                                let _ = document::eval("let el = document.getElementById('profile-new-location-input'); if (el) el.value = '';");
                             }
                         },
                         {app.tr("add_location")}

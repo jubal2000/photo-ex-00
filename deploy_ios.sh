@@ -63,6 +63,36 @@ with open(path, "wb") as f:
 print("  Info.plist updated")
 PYEOF
 
+echo "▶ Checking for explicit poca00 provisioning profile with Apple Sign In..."
+PROV_DIR="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+SPECIFIC_PROV=""
+for f in "$PROV_DIR"/*.mobileprovision; do
+    if [ -f "$f" ]; then
+        has_id=$(security cms -D -i "$f" 2>/dev/null | grep -i "com.jhfactory.poca00" || true)
+        if [ -n "$has_id" ]; then
+            SPECIFIC_PROV="$f"
+            break
+        fi
+    fi
+done
+
+if [ -n "$SPECIFIC_PROV" ]; then
+    echo "  Found explicit poca00 profile: $(basename "$SPECIFIC_PROV")"
+    cp "$SPECIFIC_PROV" "$BUNDLE/embedded.mobileprovision"
+    python3 - <<'PYEOF'
+import plistlib
+path = "/tmp/pe_entitlements.plist"
+with open(path, "rb") as f:
+    pl = plistlib.load(f)
+pl["com.apple.developer.applesignin"] = ["Default"]
+with open(path, "wb") as f:
+    plistlib.dump(pl, f)
+print("  Injected com.apple.developer.applesignin entitlement")
+PYEOF
+else
+    echo "  Using wildcard profile (Sign in with Apple capability requires explicit poca00 profile)"
+fi
+
 echo "▶ Re-signing with entitlements..."
 codesign --force --sign "$SIGNING_ID" \
     --entitlements "$ENTITLEMENTS" \

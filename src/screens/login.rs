@@ -111,8 +111,15 @@ pub fn Login() -> Element {
                         app.on_signed_in(s, remember());
                     }
                     Err(e) => {
-                        let msg = format!("{e}");
-                        if !msg.contains("cancelled") && !msg.contains("Canceled") && !msg.contains("취소") {
+                        let msg = format!("{e}").to_lowercase();
+                        // If capability/entitlement is not configured on developer account yet, fallback to web OAuth
+                        if msg.contains("authorizationerror error 1000")
+                            || msg.contains("not authorized")
+                            || msg.contains("unknown")
+                            || msg.contains("entitlement")
+                            || msg.contains("cannot be completed") {
+                            social(Provider::Apple);
+                        } else if !msg.contains("cancelled") && !msg.contains("canceled") && !msg.contains("취소") {
                             app.show_error(&e);
                         }
                     }

@@ -141,6 +141,7 @@ strings! {
     "crop_zoom" => ["확대 / 축소", "Zoom", "拡大 / 縮小", "缩放", "Zoom"],
     "crop_guide" => ["드래그하여 원하는 위치로 이동하세요", "Drag to reposition", "ドラッグして位置を調整", "拖动调整位置", "Arrastra para ajustar"],
     "crop_apply" => ["자르기 및 적용", "Crop & Apply", "切り抜いて適用", "裁剪并应用", "Recortar y aplicar"],
+    "apply_original" => ["그대로 적용", "Apply original", "そのまま適用", "直接应用", "Aplicar original"],
     "uploading_image" => ["이미지 업로드 중...", "Uploading image...", "画像アップロード中...", "正在上传图片...", "Subiendo imagen..."],
     "warn_all_tradable_title" => ["모든 카드 교환 가능 설정", "Make all cards tradable", "全カードを交換可能に設定", "全部设置为可交换", "Hacer todas intercambiables"],
     "warn_all_tradable_desc" => ["보유한 {count}장 모두를 교환 가능으로 설정하시겠습니까? 다른 사용자와 교환이 성사되면 보유 카드가 모두 소진될 수 있습니다.", "Are you sure you want to make all {count} card(s) tradable? If traded, you will have no remaining cards.", "所持している{count}枚すべてを交換可能にしますか？ 交換が成立すると所持カードがすべて無くなります。", "确定要将拥有的全部 {count} 张设置为可交换吗？如果交易成功，您将不再拥有该卡片。", "¿Estás seguro de hacer las {count} cartas intercambiables? Si se intercambian, te quedarás sin cartas."],

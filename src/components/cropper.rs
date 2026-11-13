@@ -88,6 +88,99 @@ pub fn ImageCropperModal(
         CropShape::Square => (240.0f64, 240.0f64, "mask-square"),
     };
 
+    let on_apply_original = {
+        let mut app = app;
+        let img_src_clone = image_src.clone();
+        move |_| {
+            if is_processing() {
+                return;
+            }
+            is_processing.set(true);
+
+            let img_src = img_src_clone.clone();
+            spawn(async move {
+                let js = r##"
+                (async () => {
+                    try {
+                        let img = document.getElementById("crop-source-image");
+                        if (!img || !img.naturalWidth || !img.naturalHeight) {
+                            img = document.querySelector(".crop-image-elem");
+                        }
+                        if (!img || !img.naturalWidth || !img.naturalHeight) {
+                            dioxus.send("ERROR:Image element not ready");
+                            return;
+                        }
+
+                        let w = img.naturalWidth;
+                        let h = img.naturalHeight;
+                        const maxDim = 1600;
+                        if (w > maxDim || h > maxDim) {
+                            if (w > h) {
+                                h = Math.round(h * (maxDim / w));
+                                w = maxDim;
+                            } else {
+                                w = Math.round(w * (maxDim / h));
+                                h = maxDim;
+                            }
+                        }
+
+                        const canvas = document.createElement("canvas");
+                        canvas.width = Math.round(w);
+                        canvas.height = Math.round(h);
+                        const ctx = canvas.getContext("2d");
+
+                        ctx.fillStyle = "#ffffff";
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+                        dioxus.send(dataUrl);
+                    } catch (err) {
+                        console.error("Apply original error:", err);
+                        dioxus.send("ERROR:" + (err && err.message ? err.message : String(err)));
+                    }
+                })();
+                "##;
+
+                let mut eval = document::eval(js);
+                match eval.recv::<String>().await {
+                    Ok(val) => {
+                        if let Some(b64) = val.strip_prefix("data:image/jpeg;base64,") {
+                            if let Ok(bytes) = BASE64_STANDARD.decode(b64) {
+                                on_confirm.call(bytes);
+                                return;
+                            } else {
+                                app.show_toast("이미지 디코딩에 실패했습니다.");
+                            }
+                        } else if let Some(err_msg) = val.strip_prefix("ERROR:") {
+                            if let Some(pos) = img_src.find(";base64,") {
+                                let b64 = &img_src[pos + 8..];
+                                if let Ok(bytes) = BASE64_STANDARD.decode(b64) {
+                                    on_confirm.call(bytes);
+                                    return;
+                                }
+                            }
+                            app.show_toast(format!("처리 오류: {err_msg}"));
+                        } else {
+                            app.show_toast("잘못된 이미지 형식입니다.");
+                        }
+                    }
+                    Err(e) => {
+                        if let Some(pos) = img_src.find(";base64,") {
+                            let b64 = &img_src[pos + 8..];
+                            if let Ok(bytes) = BASE64_STANDARD.decode(b64) {
+                                on_confirm.call(bytes);
+                                return;
+                            }
+                        }
+                        app.show_toast(format!("처리 실패: {e}"));
+                    }
+                }
+                is_processing.set(false);
+            });
+        }
+    };
+
     let on_apply = {
         let mut app = app;
         move |_| {
@@ -226,6 +319,8 @@ pub fn ImageCropperModal(
                     h3 { {app.tr("crop_image")} }
                     button {
                         class: "crop-close-btn",
+                        title: app.tr("cancel"),
+                        aria_label: app.tr("cancel"),
                         onclick: move |_| on_cancel.call(()),
                         "✕"
                     }
@@ -325,8 +420,8 @@ pub fn ImageCropperModal(
                     button {
                         class: "btn btn-outline",
                         disabled: is_processing(),
-                        onclick: move |_| on_cancel.call(()),
-                        {app.tr("cancel")}
+                        onclick: on_apply_original,
+                        {app.tr("apply_original")}
                     }
                     button {
                         class: "btn btn-primary",

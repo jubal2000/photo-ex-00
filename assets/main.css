@@ -146,7 +146,13 @@ img { display: block; }
 }
 .icon-btn:active { background: var(--primary-soft); }
 
-.content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: none;
+}
 
 /* ad */
 .ad-area {
@@ -556,7 +562,25 @@ input.input.input-error {
   border-radius: var(--radius);
   padding: 12px 14px;
 }
-.trade-row { padding: 4px 2px 10px; min-height: 180px; }
+.trade-row {
+  padding: 4px 2px 10px;
+  min-height: 180px;
+  overscroll-behavior-x: contain;
+  -webkit-overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+}
+.trade-row .pick {
+  touch-action: pan-x pan-y;
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.trade-row .pick img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
 .pick {
   position: relative;
   display: flex;
@@ -579,6 +603,14 @@ input.input.input-error {
   flex-direction: column;
   gap: 14px;
   padding: 12px 14px 100px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  -webkit-overscroll-behavior: none;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .trade-partner-bar {
   display: flex;
@@ -781,7 +813,7 @@ input.input.input-error {
   height: 100%;
   pointer-events: none;
   z-index: 15;
-  overflow: visible;
+  overflow: hidden;
 }
 .trade-curve-path {
   stroke-linecap: round;
@@ -801,6 +833,9 @@ input.input.input-error {
   padding: 4px 2px 8px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  -webkit-overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
 }
 .trade-category-chips::-webkit-scrollbar, .trade-series-chips::-webkit-scrollbar {
   display: none;
@@ -825,6 +860,7 @@ input.input.input-error {
   height: 100%;
   pointer-events: none;
   z-index: 35;
+  overflow: hidden;
 }
 .trade-cut-btn-floating {
   position: absolute;

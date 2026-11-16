@@ -103,6 +103,7 @@ pub async fn create_series(
     category_id: &str,
     name: &str,
     image_url: &str,
+    official_type: OfficialType,
 ) -> Result<String, CreateError> {
     let lower = norm(name);
     let cat_artist = cat.category(category_id).map(|c| c.artist_id.clone()).unwrap_or_default();
@@ -116,6 +117,7 @@ pub async fn create_series(
         name: name.trim().into(),
         name_lower: lower,
         image_url: image_url.trim().into(),
+        official_type: official_type.code().into(),
         created_by: uid.into(),
         created_at: now_secs(),
         ..Default::default()
@@ -123,7 +125,7 @@ pub async fn create_series(
     Ok(fs::add(tok, "series", &s).await?)
 }
 
-pub async fn create_card(tok: &str, uid: &str, cat: &Catalog, series_id: &str, name: &str, image_url: &str) -> Result<String, CreateError> {
+pub async fn create_card(tok: &str, uid: &str, cat: &Catalog, series_id: &str, name: &str, image_url: &str, official_type: OfficialType) -> Result<String, CreateError> {
     let lower = norm(name);
     if cat.cards.iter().any(|c| c.series_id == series_id && c.name_lower == lower) {
         return Err(CreateError::Duplicate);
@@ -145,6 +147,7 @@ pub async fn create_card(tok: &str, uid: &str, cat: &Catalog, series_id: &str, n
         name_lower: lower,
         image_url: image_url.into(),
         sort_order: next_sort_order,
+        official_type: official_type.code().into(),
         created_by: uid.into(),
         created_at: now_secs(),
         ..Default::default()
@@ -176,6 +179,7 @@ pub async fn update_card(
     description: &str,
     title_font: &str,
     title_color: &str,
+    official_type: OfficialType,
 ) -> R<()> {
     let lower = norm(name);
     let mut fields = Map::new();
@@ -185,6 +189,7 @@ pub async fn update_card(
     fields.insert("description".into(), json!(description.trim()));
     fields.insert("titleFont".into(), json!(title_font.trim()));
     fields.insert("titleColor".into(), json!(title_color.trim()));
+    fields.insert("officialType".into(), json!(official_type.code()));
     fs::update_fields(tok, &format!("cards/{card_id}"), fields).await
 }
 
@@ -232,6 +237,7 @@ pub async fn update_series(
     name: &str,
     image_url: &str,
     description: &str,
+    official_type: OfficialType,
 ) -> R<()> {
     let lower = norm(name);
     let mut fields = Map::new();
@@ -239,6 +245,7 @@ pub async fn update_series(
     fields.insert("nameLower".into(), json!(lower));
     fields.insert("imageUrl".into(), json!(image_url.trim()));
     fields.insert("description".into(), json!(description.trim()));
+    fields.insert("officialType".into(), json!(official_type.code()));
     fs::update_fields(tok, &format!("series/{series_id}"), fields).await
 }
 
@@ -341,8 +348,13 @@ fn obj(v: Value) -> Map<String, Value> {
 
 // ---------------- discovery (home) ----------------
 
-/// Other users' visible, tradable holdings for the given artists.
-pub async fn tradable_for_artists(tok: &str, artist_ids: &[String], my_uid: &str) -> R<Vec<Holding>> {
+/// Other users' visible holdings (any count) for the given artists.
+///
+/// Non-tradable holdings are included on purpose: they tell us which cards a user
+/// already owns, so we can skip users with whom no real trade is possible.
+/// `tradable >= 0` matches every holding and lets the query reuse the existing
+/// (artistId, visible, tradable) collection-group index.
+pub async fn visible_for_artists(tok: &str, artist_ids: &[String], my_uid: &str) -> R<Vec<Holding>> {
     if artist_ids.is_empty() {
         return Ok(vec![]);
     }
@@ -351,8 +363,8 @@ pub async fn tradable_for_artists(tok: &str, artist_ids: &[String], my_uid: &str
         let rows: Vec<Holding> = Query::group("holdings")
             .filter("artistId", Op::In, json!(chunk))
             .filter("visible", Op::Eq, json!(true))
-            .filter("tradable", Op::Gt, json!(0))
-            .limit(1000)
+            .filter("tradable", Op::Gte, json!(0))
+            .limit(5000)
             .run(tok)
             .await?;
         out.extend(rows.into_iter().filter(|h| h.owner_uid != my_uid));
@@ -360,37 +372,68 @@ pub async fn tradable_for_artists(tok: &str, artist_ids: &[String], my_uid: &str
     Ok(out)
 }
 
-/// Number of distinct other users offering at least one card, per (artist_id, category_id).
-pub fn offers_per_artist_category(rows: &[Holding]) -> HashMap<(String, String), usize> {
-    let mut sets: HashMap<(String, String), HashSet<String>> = HashMap::new();
-    for h in rows {
-        sets.entry((h.artist_id.clone(), h.category_id.clone())).or_default().insert(h.owner_uid.clone());
-    }
-    sets.into_iter().map(|(k, v)| (k, v.len())).collect()
-}
-
-#[allow(dead_code)]
-pub fn offers_per_category(rows: &[Holding]) -> HashMap<String, usize> {
-    let mut sets: HashMap<String, HashSet<String>> = HashMap::new();
-    for h in rows {
-        sets.entry(h.category_id.clone()).or_default().insert(h.owner_uid.clone());
-    }
-    sets.into_iter().map(|(k, v)| (k, v.len())).collect()
-}
-
-pub async fn offers_in_category(tok: &str, category_id: &str, artist_id: Option<&str>, my_uid: &str) -> R<Vec<Holding>> {
-    let mut q = Query::group("holdings")
+/// Other users' visible holdings (any count) in a category, optionally for one artist.
+/// Uses the (categoryId, visible, tradable) index; the artist is filtered client-side.
+pub async fn visible_in_category(tok: &str, category_id: &str, artist_id: Option<&str>, my_uid: &str) -> R<Vec<Holding>> {
+    let rows: Vec<Holding> = Query::group("holdings")
         .filter("categoryId", Op::Eq, json!(category_id))
         .filter("visible", Op::Eq, json!(true))
-        .filter("tradable", Op::Gt, json!(0))
-        .limit(1000);
-    if let Some(aid) = artist_id {
-        if !aid.is_empty() {
-            q = q.filter("artistId", Op::Eq, json!(aid));
+        .filter("tradable", Op::Gte, json!(0))
+        .limit(5000)
+        .run(tok)
+        .await?;
+    let aid = artist_id.filter(|a| !a.is_empty());
+    Ok(rows
+        .into_iter()
+        .filter(|h| h.owner_uid != my_uid && aid.map_or(true, |a| h.artist_id == a))
+        .collect())
+}
+
+/// Users with whom a real trade exists, grouped by `key` (e.g. category), mapped to
+/// how many 1:1 pairs an auto-match would make with them.
+///
+/// A pair is real when, within the same group, the partner gives a card I don't own
+/// and I give a card the partner doesn't own (one copy per card, "protect single card"
+/// respected — same rules as the trade screen's auto-match). So the pair count is
+/// `min(cards they can give me, cards I can give them)`; users with 0 are left out.
+pub fn mutual_partners_by<K, F>(others: &[Holding], mine: &[Holding], protect_single: bool, key: F) -> HashMap<K, HashMap<String, usize>>
+where
+    K: std::hash::Hash + Eq + Clone,
+    F: Fn(&Holding) -> K,
+{
+    #[derive(Default)]
+    struct Side {
+        owned: HashSet<String>,
+        give: HashSet<String>,
+    }
+    let my_owned: HashSet<&str> = mine.iter().filter(|h| h.count > 0).map(|h| h.card_id.as_str()).collect();
+    let mut my_give: HashMap<K, HashSet<String>> = HashMap::new();
+    for h in mine {
+        if h.tradable > 0 && !(protect_single && h.count <= 1) {
+            my_give.entry(key(h)).or_default().insert(h.card_id.clone());
         }
     }
-    let rows: Vec<Holding> = q.run(tok).await?;
-    Ok(rows.into_iter().filter(|h| h.owner_uid != my_uid).collect())
+    let mut theirs: HashMap<(K, String), Side> = HashMap::new();
+    for h in others {
+        let side = theirs.entry((key(h), h.owner_uid.clone())).or_default();
+        if h.count > 0 {
+            side.owned.insert(h.card_id.clone());
+        }
+        if h.tradable > 0 {
+            side.give.insert(h.card_id.clone());
+        }
+    }
+    let mut out: HashMap<K, HashMap<String, usize>> = HashMap::new();
+    for ((k, uid), side) in theirs {
+        let Some(mine_give) = my_give.get(&k) else { continue };
+        let they_offer_new = side.give.iter().filter(|c| !my_owned.contains(c.as_str())).count();
+        let i_offer_new = mine_give.iter().filter(|c| !side.owned.contains(*c)).count();
+        let n = they_offer_new.min(i_offer_new);
+        if n > 0 {
+            out.entry(k).or_default().insert(uid, n);
+        }
+    }
+    out
 }
 
 /// A partner's visible, tradable holdings (for the trade screen).
@@ -516,4 +559,50 @@ pub async fn load_global_card_counts(tok: &str, my_holdings: &[Holding]) -> Hash
         }
     }
     map
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn h(owner: &str, card: &str, count: i64, tradable: i64) -> Holding {
+        Holding { owner_uid: owner.into(), card_id: card.into(), category_id: "cat".into(), count, tradable, ..Default::default() }
+    }
+
+    fn partners(others: &[Holding], mine: &[Holding], protect: bool) -> HashSet<String> {
+        mutual_partners_by(others, mine, protect, |_| ()).remove(&()).unwrap_or_default().into_keys().collect()
+    }
+
+    #[test]
+    fn pair_count_is_min_of_both_sides() {
+        // I can give A, B (u1 lacks both); u1 gives C, D, E but I already own E.
+        let mine = vec![h("me", "A", 2, 1), h("me", "B", 3, 2), h("me", "E", 1, 0)];
+        let others = vec![h("u1", "C", 1, 1), h("u1", "D", 4, 3), h("u1", "E", 2, 1)];
+        let counts = mutual_partners_by(&others, &mine, false, |_| ()).remove(&()).unwrap();
+        assert_eq!(counts.get("u1"), Some(&2));
+    }
+
+    #[test]
+    fn mutual_trade_filter() {
+        let mine = vec![h("me", "A", 2, 1), h("me", "B", 1, 0)];
+        let others = vec![
+            // ok: offers C (I lack it), lacks A
+            h("u1", "C", 2, 1),
+            // offers only B, which I already own
+            h("u2", "B", 2, 1),
+            // offers C but already owns A (my only tradable card)
+            h("u3", "C", 2, 1),
+            h("u3", "A", 1, 0),
+            // owns cards but offers nothing
+            h("u4", "D", 1, 0),
+        ];
+        let p = partners(&others, &mine, false);
+        assert_eq!(p, HashSet::from(["u1".to_string()]));
+
+        // Protect single card: my only tradable card with count 1 cannot be offered.
+        let mine_single = vec![h("me", "A", 1, 1)];
+        assert!(partners(&others, &mine_single, true).is_empty());
+        // Without B in my collection, u2's B is now worth receiving too.
+        assert_eq!(partners(&others, &mine_single, false), HashSet::from(["u1".to_string(), "u2".to_string()]));
+    }
 }

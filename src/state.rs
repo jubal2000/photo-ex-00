@@ -14,6 +14,7 @@ pub const KEY_BIO: &str = "biometric";
 pub const KEY_LANG: &str = "lang";
 pub const KEY_EDIT_MODE: &str = "edit_mode";
 pub const KEY_PROTECT_SINGLE_CARD: &str = "protect_single_card";
+pub const KEY_OFFICIAL_ONLY: &str = "official_only";
 
 /// Screens of the single-screen app. There is no GNB; screens are pushed on a stack
 /// and the header shows a back button when the stack is deeper than the home screen.
@@ -51,6 +52,8 @@ pub struct AppState {
     pub edit_mode: Signal<bool>,
     /// Protect cards with count == 1 from being set as tradable.
     pub protect_single_card: Signal<bool>,
+    /// Show only official series and cards in browsing lists.
+    pub official_only: Signal<bool>,
     /// Global total count of cards across all users (for rarity star).
     pub global_card_counts: Signal<std::collections::HashMap<String, i64>>,
 }
@@ -60,6 +63,7 @@ impl AppState {
         let lang = storage::get(KEY_LANG).map(|c| Lang::from_code(&c)).unwrap_or(Lang::Ko);
         let edit_mode = storage::get(KEY_EDIT_MODE).map(|v| v == "true" || v == "1").unwrap_or(false);
         let protect_single_card = storage::get(KEY_PROTECT_SINGLE_CARD).map(|v| v == "true" || v == "1").unwrap_or(false);
+        let official_only = storage::get(KEY_OFFICIAL_ONLY).map(|v| v == "true" || v == "1").unwrap_or(false);
         Self {
             session: Signal::new(None),
             lang: Signal::new(lang),
@@ -72,6 +76,7 @@ impl AppState {
             booted: Signal::new(false),
             edit_mode: Signal::new(edit_mode),
             protect_single_card: Signal::new(protect_single_card),
+            official_only: Signal::new(official_only),
             global_card_counts: Signal::new(std::collections::HashMap::new()),
         }
     }
@@ -82,6 +87,13 @@ impl AppState {
 
     pub fn tf(&self, key: &str, args: &[(&str, String)]) -> String {
         i18n::tf(*self.lang.read(), key, args)
+    }
+
+    /// Catalogue for browsing lists: without unofficial items when "official only" is on.
+    /// Edit screens keep using `catalog` so every item stays editable.
+    pub fn display_catalog(&self) -> Catalog {
+        let cat = self.catalog.read();
+        if *self.official_only.read() { cat.official_only() } else { cat.clone() }
     }
 
     pub fn uid(&self) -> String {

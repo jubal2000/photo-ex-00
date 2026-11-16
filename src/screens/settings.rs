@@ -87,6 +87,19 @@ pub fn Settings() -> Element {
                     }
                 }
             }
+            label { class: "setting-row",
+                div {
+                    div { {app.tr("official_only")} }
+                    div { class: "muted small", {app.tr("official_only_desc")} }
+                }
+                input { r#type: "checkbox", checked: *app.official_only.read(),
+                    onchange: move |e| {
+                        let v = e.checked();
+                        app.official_only.set(v);
+                        storage::set(KEY_OFFICIAL_ONLY, if v { "1" } else { "0" });
+                    }
+                }
+            }
             div { class: "setting-row muted",
                 span { {app.tr("version")} }
                 span { "{env!(\"CARGO_PKG_VERSION\")} · {platform::platform_name()}" }

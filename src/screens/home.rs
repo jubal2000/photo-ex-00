@@ -18,11 +18,20 @@ pub fn Home() -> Element {
         let favs = favs();
         let uid = app.uid();
         let tok = app.token().await.ok()?;
-        api::tradable_for_artists(&tok, &favs, &uid).await.ok().map(|rows| api::offers_per_artist_category(&rows))
+        api::visible_for_artists(&tok, &favs, &uid).await.ok()
     });
 
-    let catalog = app.catalog.read();
-    let counts = offers.read().clone().flatten().unwrap_or_default();
+    let catalog = app.display_catalog();
+    // Per (artist, category): number of users with whom a real trade is possible.
+    // Computed at render time so it follows changes to my own holdings.
+    let counts: std::collections::HashMap<(String, String), usize> = {
+        let rows = offers.read().clone().flatten().unwrap_or_default();
+        let mine = app.holdings.read();
+        api::mutual_partners_by(&rows, &mine, *app.protect_single_card.read(), |h| (h.artist_id.clone(), h.category_id.clone()))
+            .into_iter()
+            .map(|(k, users)| (k, users.len()))
+            .collect()
+    };
 
     // 등록된 카드가 1개 이상 있는 관심 아티스트만 필터링 (등록된 카드가 하나도 없는 아티스트는 홈에 표시 X)
     let active_favs: Vec<String> = favs()
@@ -131,18 +140,16 @@ pub fn CategoryOffers(category_id: String, artist_id: Option<String>) -> Element
         async move {
             let uid = app.uid();
             let tok = app.token().await.ok()?;
-            let rows = api::offers_in_category(&tok, &cid, aid.as_deref(), &uid).await.ok()?;
-            let mut by_user: BTreeMap<String, Vec<Holding>> = BTreeMap::new();
-            for h in rows {
-                by_user.entry(h.owner_uid.clone()).or_default().push(h);
-            }
-            let uids: Vec<String> = by_user.keys().cloned().collect();
+            let rows = api::visible_in_category(&tok, &cid, aid.as_deref(), &uid).await.ok()?;
+            let mut uids: Vec<String> = rows.iter().filter(|h| h.tradable > 0).map(|h| h.owner_uid.clone()).collect();
+            uids.sort();
+            uids.dedup();
             let profiles = api::load_profiles(&tok, &uids).await;
-            Some((by_user, profiles))
+            Some((rows, profiles))
         }
     });
 
-    let catalog = app.catalog.read();
+    let catalog = app.display_catalog();
     let cat = catalog.category(&category_id).cloned().unwrap_or_default();
     let title_artist = artist_id.as_deref().unwrap_or(&cat.artist_id);
     let title_artist_name = catalog.artist_name(title_artist);
@@ -152,6 +159,43 @@ pub fn CategoryOffers(category_id: String, artist_id: Option<String>) -> Element
         format!("{title_artist_name} · {}", cat.name)
     };
     let mine: std::collections::HashSet<String> = app.holdings.read().iter().filter(|h| h.count > 0).map(|h| h.card_id.clone()).collect();
+
+    // Keep only users with whom a real trade exists (they offer a card I lack AND I can
+    // offer a card they lack); show each user's tradable cards, ones I lack first.
+    // Each user also carries the auto-match pair count; users with more pairs come first.
+    let offers: Option<Option<(Vec<(String, usize, Vec<Holding>)>, std::collections::HashMap<String, crate::models::Profile>)>> =
+        data.read().clone().map(|r| {
+            r.map(|(rows, profiles)| {
+                // Only my cards in this same category (and artist, when given) can be offered here.
+                let aid = artist_id.as_deref().filter(|a| !a.is_empty());
+                let mine_here: Vec<Holding> = app
+                    .holdings
+                    .read()
+                    .iter()
+                    .filter(|h| h.category_id == category_id && aid.map_or(true, |a| h.artist_id == a))
+                    .cloned()
+                    .collect();
+                let partners = api::mutual_partners_by(&rows, &mine_here, *app.protect_single_card.read(), |_| ())
+                    .remove(&())
+                    .unwrap_or_default();
+                let mut by_user: BTreeMap<String, Vec<Holding>> = BTreeMap::new();
+                for h in rows {
+                    if h.tradable > 0 && partners.contains_key(&h.owner_uid) && catalog.card(&h.card_id).is_some() {
+                        by_user.entry(h.owner_uid.clone()).or_default().push(h);
+                    }
+                }
+                let mut list: Vec<(String, usize, Vec<Holding>)> = by_user
+                    .into_iter()
+                    .map(|(uid, mut items)| {
+                        items.sort_by_key(|h| mine.contains(&h.card_id));
+                        let n = partners.get(&uid).copied().unwrap_or(0);
+                        (uid, n, items)
+                    })
+                    .collect();
+                list.sort_by(|a, b| b.1.cmp(&a.1));
+                (list, profiles)
+            })
+        });
 
     rsx! {
         div { class: "page category-offers-page",
@@ -167,12 +211,12 @@ pub fn CategoryOffers(category_id: String, artist_id: Option<String>) -> Element
                 }
             }
             h3 { class: "sub-title", {app.tr("home_offers")} }
-            match data.read().clone() {
+            match offers {
                 None => rsx! { p { class: "muted", {app.tr("loading")} } },
                 Some(None) => rsx! { p { class: "muted", {app.tr("error")} } },
                 Some(Some((by_user, _))) if by_user.is_empty() => rsx! { p { class: "muted", {app.tr("home_no_offers")} } },
                 Some(Some((by_user, profiles))) => rsx! {
-                    for (uid, items) in by_user {
+                    for (uid, pair_n, items) in by_user {
                         {
                             let p = profiles.get(&uid).cloned().unwrap_or_default();
                             let name = if p.nickname.is_empty() { app.tr("unknown_user").to_string() } else { p.nickname.clone() };
@@ -183,7 +227,10 @@ pub fn CategoryOffers(category_id: String, artist_id: Option<String>) -> Element
                                     div { class: "offer-head",
                                         Avatar { url: p.photo_url.clone(), size: 36 }
                                         div { class: "grow",
-                                            div { class: "bold", "{name}" }
+                                            div { class: "bold",
+                                                "{name} "
+                                                span { class: "pill", {app.tr("auto_match_preview").replace("{count}", &pair_n.to_string())} }
+                                            }
                                             div { class: "muted small", "{p.greeting}" }
                                         }
                                         {

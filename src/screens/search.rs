@@ -18,7 +18,7 @@ pub fn Search() -> Element {
     let mut artist = use_signal(String::new);
     let mut category = use_signal(String::new);
 
-    let catalog = app.catalog.read().clone();
+    let catalog = app.display_catalog();
     let owned: HashSet<String> = app.holdings.read().iter().map(|h| h.card_id.clone()).collect();
 
     let kw = keyword().trim().to_lowercase();

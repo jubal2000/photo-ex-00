@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 
 use crate::api;
 use crate::app::reload_holdings;
-use crate::components::CardThumb;
+use crate::components::{CardThumb, OfficialMark};
 use crate::models::Card;
 use crate::state::*;
 
@@ -15,7 +15,7 @@ pub fn ArtistDetail(artist_id: String, category_id: Option<String>) -> Element {
     let mut app = use_app();
     let mut selected_cat = use_signal(|| category_id.clone());
 
-    let catalog = app.catalog.read().clone();
+    let catalog = app.display_catalog();
     let maybe_artist = catalog.artist(&artist_id);
     let artist_desc = maybe_artist.map(|a| a.description.clone()).unwrap_or_default();
 
@@ -212,6 +212,9 @@ pub fn ArtistDetail(artist_id: String, category_id: Option<String>) -> Element {
                                                             div { class: "group-head-text",
                                                                 div { class: "group-title-row",
                                                                     span { class: "group-title", "{ser_title}" }
+                                                                    if let Some(s) = ser_opt {
+                                                                        OfficialMark { kind: s.kind(), with_label: true }
+                                                                    }
                                                                     if *app.edit_mode.read() {
                                                                         button {
                                                                             class: "btn-icon-subtle edit-title-btn",

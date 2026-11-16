@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 
 use crate::api;
 use crate::app::reload_catalog;
-use crate::components::{CropShape, ImageCropperModal, UploadProgressOverlay, read_image_data_url};
+use crate::components::{CropShape, ImageCropperModal, OfficialTypePicker, UploadProgressOverlay, read_image_data_url};
 use crate::firebase::storage;
 use crate::models::Card;
 use crate::state::*;
@@ -37,6 +37,7 @@ pub fn EditCard(card_id: String) -> Element {
     let mut name = use_signal(|| orig.name.clone());
     let mut image_url = use_signal(|| orig.image_url.clone());
     let mut description = use_signal(|| orig.description.clone());
+    let mut official = use_signal(|| orig.kind());
     let mut title_font = use_signal(|| orig.title_font.clone());
     let mut title_color = use_signal(|| if orig.title_color.is_empty() { "#ffffff".to_string() } else { orig.title_color.clone() });
     let mut busy = use_signal(|| false);
@@ -92,6 +93,7 @@ pub fn EditCard(card_id: String) -> Element {
                     &description(),
                     &title_font(),
                     &title_color(),
+                    official(),
                 ).await,
                 Err(e) => Err(e),
             };
@@ -139,6 +141,7 @@ pub fn EditCard(card_id: String) -> Element {
         description: description().trim().to_string(),
         title_font: title_font().clone(),
         title_color: title_color().clone(),
+        official_type: official().code().into(),
         ..Default::default()
     };
 
@@ -276,6 +279,8 @@ pub fn EditCard(card_id: String) -> Element {
                     oninput: move |e| description.set(e.value()),
                 }
             }
+
+            OfficialTypePicker { value: official(), on_change: move |k| official.set(k) }
 
             // Save & Delete Action Row
             div { class: "edit-card-actions-row",

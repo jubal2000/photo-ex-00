@@ -26,14 +26,21 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-/* Themed scrollbars (dark track, violet thumb) instead of the light OS default. */
+/* Scrollbars: vertical ones are hidden everywhere (wheel / touch scrolling still works);
+   horizontal ones get a themed violet thumb on a transparent track.
+   Note: setting `scrollbar-width` / `scrollbar-color` makes Chromium ignore the
+   ::-webkit-scrollbar rules below, so those properties are applied only in browsers
+   without ::-webkit-scrollbar support (Firefox), which cannot style axes separately. */
 :root { color-scheme: dark; }
-* { scrollbar-width: thin; scrollbar-color: rgba(138, 122, 255, 0.45) transparent; }
-::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar { width: 0; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(138, 122, 255, 0.4); border-radius: 8px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(138, 122, 255, 0.65); }
 ::-webkit-scrollbar-corner { background: transparent; }
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-width: thin; scrollbar-color: rgba(138, 122, 255, 0.45) transparent; }
+  .content, .preview-modal-body, .preview-holdings-grid, .chat-messages-area { scrollbar-width: none; }
+}
 
 html, body {
   margin: 0;
@@ -479,7 +486,23 @@ input.input.input-error {
   border: 1px dashed rgba(255, 255, 255, 0.12);
   border-radius: 8px;
 }
-.card-name { font-size: 13px; font-weight: 600; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-name {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 5px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+.card-thumb.small .card-name {
+  font-size: 11px;
+  line-height: 1.3;
+}
 .badge { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,.75); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 6px; backdrop-filter: blur(4px); }
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 12px 10px; }
 
@@ -1060,9 +1083,14 @@ input.input.input-error {
 .pair-node-name {
   font-size: 12px;
   font-weight: 600;
-  white-space: nowrap;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  word-break: break-word;
   color: #fff;
 }
 .pair-arrow-bridge {
@@ -1271,9 +1299,14 @@ input.input.input-error {
 .preview-cname {
   font-size: 12px;
   font-weight: 600;
-  white-space: nowrap;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  word-break: break-word;
   color: #fff;
 }
 .preview-cquant {
@@ -1828,9 +1861,14 @@ input.input.input-error {
 .preview-card-name {
   font-size: 14px;
   font-weight: 700;
-  white-space: nowrap;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  word-break: break-word;
   padding: 2px 0;
 }
 .preview-card-desc {
@@ -2855,9 +2893,14 @@ input.input.input-error {
   font-weight: 600;
   text-align: center;
   color: var(--text);
-  white-space: nowrap;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  word-break: break-word;
 }
 
 .series-card-order-controls {
@@ -3361,3 +3404,12 @@ input.input.input-error {
 }
 
 
+
+/* Official goods mark */
+.official-mark { display: inline-flex; align-items: center; gap: 3px; color: #3b82f6; vertical-align: -1px; margin-right: 4px; flex-shrink: 0; }
+.official-mark svg { display: block; }
+.official-mark.with-label { margin: 0 0 0 6px; padding: 1px 6px 1px 3px; border-radius: 999px; background: rgba(59, 130, 246, 0.14); font-size: 10px; font-weight: 700; }
+.official-mark.sponsored { color: #f59e0b; }
+.official-mark.sponsored.with-label { background: rgba(245, 158, 11, 0.16); }
+.segmented.three button { font-size: 13px; }
+.official-picker .muted.small { margin-top: 6px; }

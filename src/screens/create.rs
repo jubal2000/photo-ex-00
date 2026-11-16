@@ -2,9 +2,9 @@ use dioxus::prelude::*;
 
 use crate::api::{self, CreateError};
 use crate::app::reload_catalog;
-use crate::components::{ArtistAvatar, CropShape, ImageCropperModal, UploadProgressOverlay, read_image_data_url};
+use crate::components::{ArtistAvatar, CropShape, ImageCropperModal, OfficialTypePicker, UploadProgressOverlay, read_image_data_url};
 use crate::firebase::storage;
-use crate::models::Catalog;
+use crate::models::{Catalog, OfficialType};
 use crate::state::*;
 
 const PRESET_COLORS: &[&str] = &[
@@ -76,6 +76,7 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
     let mut series = use_signal(String::new);
     let mut image_url = use_signal(String::new);
     let mut artist_color = use_signal(|| "#7a6bff".to_string());
+    let mut official = use_signal(|| OfficialType::Official);
     let mut busy = use_signal(|| false);
     let mut crop_img = use_signal(|| None::<String>);
     let mut upload_progress = use_signal(|| None::<u8>);
@@ -197,8 +198,8 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
                 Ok(tok) => match k {
                     Kind::Artist => api::create_artist(&tok, &uid, &cat, &n, &image_url(), &cur_color).await,
                     Kind::Category => api::create_category(&tok, &uid, &cat, &artist(), &n, &image_url()).await,
-                    Kind::Series => api::create_series(&tok, &uid, &cat, &artist(), &category(), &n, &image_url()).await,
-                    Kind::Card => api::create_card(&tok, &uid, &cat, &cur_series, &n, &image_url()).await,
+                    Kind::Series => api::create_series(&tok, &uid, &cat, &artist(), &category(), &n, &image_url(), official()).await,
+                    Kind::Card => api::create_card(&tok, &uid, &cat, &cur_series, &n, &image_url(), official()).await,
                 },
             };
             match res {
@@ -308,6 +309,9 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
                         onchange: move |e| {
                             let new_sid = e.value();
                             series.set(new_sid.clone());
+                            if let Some(s) = app.catalog.read().series_of(&new_sid) {
+                                official.set(s.kind());
+                            }
                             if !new_sid.is_empty() {
                                 let cat = app.catalog.read();
                                 let default_n = next_default_card_name(&cat, &new_sid, app.tr("card_default_prefix"));
@@ -344,6 +348,10 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
                     spellcheck: "false",
                     oninput: move |e| name.set(e.value()),
                 }
+            }
+
+            if k == Kind::Series || k == Kind::Card {
+                OfficialTypePicker { value: official(), on_change: move |k| official.set(k) }
             }
 
             if k == Kind::Artist {

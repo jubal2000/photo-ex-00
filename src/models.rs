@@ -3,8 +3,8 @@
 //! Shared catalogue (anyone signed in can add, see `firestore.rules`):
 //!   artists/{id}      name
 //!   categories/{id}   artistId, name
-//!   series/{id}       artistId, categoryId, name
-//!   cards/{id}        artistId, categoryId, seriesId, name, imageUrl
+//!   series/{id}       artistId, categoryId, name, officialType
+//!   cards/{id}        artistId, categoryId, seriesId, name, imageUrl, officialType
 //!
 //! Per user:
 //!   users/{uid}                        profile
@@ -64,6 +64,8 @@ pub struct Series {
     pub name_lower: String,
     pub image_url: String,
     pub description: String,
+    /// `official` | `sponsored` | `unofficial` (see [`OfficialType`]).
+    pub official_type: String,
     pub created_by: String,
     pub created_at: u64,
 }
@@ -82,8 +84,61 @@ pub struct Card {
     pub title_font: String,
     pub title_color: String,
     pub sort_order: i64,
+    /// `official` | `sponsored` | `unofficial` (see [`OfficialType`]).
+    pub official_type: String,
     pub created_by: String,
     pub created_at: u64,
+}
+
+/// Who released a series / card.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum OfficialType {
+    /// Officially released by the agency.
+    Official,
+    /// Official sponsorship / collaboration goods.
+    Sponsored,
+    /// Made by users (fan-made goods etc.).
+    Unofficial,
+}
+
+impl OfficialType {
+    pub const ALL: [OfficialType; 3] = [OfficialType::Official, OfficialType::Sponsored, OfficialType::Unofficial];
+
+    /// Unknown or empty values are treated as unofficial.
+    pub fn from_code(s: &str) -> Self {
+        match s {
+            "official" => OfficialType::Official,
+            "sponsored" => OfficialType::Sponsored,
+            _ => OfficialType::Unofficial,
+        }
+    }
+    pub fn code(self) -> &'static str {
+        match self {
+            OfficialType::Official => "official",
+            OfficialType::Sponsored => "sponsored",
+            OfficialType::Unofficial => "unofficial",
+        }
+    }
+    /// i18n key of the label.
+    pub fn label_key(self) -> &'static str {
+        self.code()
+    }
+    /// Official or sponsored (not user-made).
+    pub fn is_licensed(self) -> bool {
+        self != OfficialType::Unofficial
+    }
+}
+
+impl Series {
+    pub fn kind(&self) -> OfficialType {
+        OfficialType::from_code(&self.official_type)
+    }
+}
+
+impl Card {
+    pub fn kind(&self) -> OfficialType {
+        OfficialType::from_code(&self.official_type)
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -194,5 +249,20 @@ impl Catalog {
     }
     pub fn series_name(&self, id: &str) -> String {
         self.series_of(id).map(|a| a.name.clone()).unwrap_or_default()
+    }
+    /// Copy without user-made (unofficial) series and cards, keeping official and
+    /// sponsored ones (for the "official & sponsored only" option).
+    pub fn official_only(&self) -> Catalog {
+        Catalog {
+            artists: self.artists.clone(),
+            categories: self.categories.clone(),
+            series: self.series.iter().filter(|s| s.kind().is_licensed()).cloned().collect(),
+            cards: self
+                .cards
+                .iter()
+                .filter(|c| c.kind().is_licensed() && self.series_of(&c.series_id).map_or(true, |s| s.kind().is_licensed()))
+                .cloned()
+                .collect(),
+        }
     }
 }

@@ -49,6 +49,8 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
     };
 
     let catalog = app.catalog.read().clone();
+    // Browsing list honours the "official only" option; lookups keep the full catalogue.
+    let shown = app.display_catalog();
     let my_all = app.holdings.read().clone();
 
     // Map holdings by card_id for fast lookup
@@ -128,7 +130,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
     // Find available series within this category & artist
     let mut available_series: Vec<(String, String)> = Vec::new();
     let mut seen_sers = HashSet::new();
-    for c in catalog.cards.iter().filter(|c| {
+    for c in shown.cards.iter().filter(|c| {
         let cat_ok = cur_cat.as_ref().map(|cat_id| &c.category_id == cat_id).unwrap_or(true);
         let art_ok = target_artist_id.as_ref().map(|aid| &c.artist_id == aid).unwrap_or(true);
         cat_ok && art_ok
@@ -141,7 +143,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
 
     let cur_ser = selected_series();
     let display_cards: Vec<Card> = {
-        let mut cards: Vec<Card> = catalog.cards.iter().filter(|c| {
+        let mut cards: Vec<Card> = shown.cards.iter().filter(|c| {
             // 1. Strict artist filter: prevent cards of any other artist from leaking into this trade
             if let Some(ref aid) = target_artist_id {
                 if !aid.is_empty() && &c.artist_id != aid {
@@ -208,7 +210,8 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
                 if protect_single && my_cnt <= 1 {
                     continue;
                 }
-                for _ in 0..tradable {
+                // One copy per card at most: the partner gains nothing from two of the same card.
+                if tradable > 0 {
                     my_candidates.push(c.id.clone());
                 }
             }
@@ -217,7 +220,8 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
             let mut their_candidates: Vec<String> = Vec::new();
             for c in &display_cards {
                 let tradable = their_tradable_map.get(&c.id).copied().unwrap_or(0);
-                for _ in 0..tradable {
+                // Likewise, never receive two copies of the same card in one auto-match.
+                if tradable > 0 {
                     their_candidates.push(c.id.clone());
                 }
             }

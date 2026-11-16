@@ -286,7 +286,62 @@ pub fn CardThumb(
             if let Some(b) = badge {
                 span { class: "badge", "{b}" }
             }
-            div { class: "card-name", style: "{title_style}", "{card.name}" }
+            div { class: "card-name", style: "{title_style}",
+                OfficialMark { kind: card.kind() }
+                "{card.name}"
+            }
+        }
+    }
+}
+
+/// Release-type mark: blue check for official, amber star for sponsored, nothing for user-made.
+#[component]
+pub fn OfficialMark(kind: crate::models::OfficialType, #[props(default)] with_label: bool) -> Element {
+    use crate::models::OfficialType;
+    let app = crate::state::use_app();
+    if kind == OfficialType::Unofficial {
+        return rsx! {};
+    }
+    let label = app.tr(kind.label_key());
+    let base = if kind == OfficialType::Official { "official-mark" } else { "official-mark sponsored" };
+    let class = if with_label { format!("{base} with-label") } else { base.to_string() };
+    rsx! {
+        span { class: "{class}", title: "{label}", aria_label: "{label}",
+            svg { view_box: "0 0 24 24", width: "12", height: "12",
+                circle { cx: "12", cy: "12", r: "11", fill: "currentColor" }
+                if kind == OfficialType::Official {
+                    path { d: "M7 12.5l3.2 3.2L17 9", fill: "none", stroke: "#fff", stroke_width: "2.6", stroke_linecap: "round", stroke_linejoin: "round" }
+                } else {
+                    path { d: "M12 5.5l1.9 3.9 4.3.6-3.1 3 .7 4.3L12 15.3l-3.8 2 .7-4.3-3.1-3 4.3-.6z", fill: "#fff" }
+                }
+            }
+            if with_label { span { "{label}" } }
+        }
+    }
+}
+
+/// Three-way picker for official / sponsored / unofficial, with the meaning of the choice.
+#[component]
+pub fn OfficialTypePicker(value: crate::models::OfficialType, on_change: EventHandler<crate::models::OfficialType>) -> Element {
+    use crate::models::OfficialType;
+    let app = crate::state::use_app();
+    rsx! {
+        div { class: "field official-picker",
+            span { {app.tr("official_type")} }
+            div { class: "segmented three",
+                for k in OfficialType::ALL {
+                    button { key: "{k.code()}", r#type: "button",
+                        class: if k == value { "on" } else { "" },
+                        onclick: move |_| on_change.call(k),
+                        {app.tr(k.label_key())}
+                    }
+                }
+            }
+            div { class: "muted small", {app.tr(match value {
+                OfficialType::Official => "official_desc",
+                OfficialType::Sponsored => "sponsored_desc",
+                OfficialType::Unofficial => "unofficial_desc",
+            })} }
         }
     }
 }

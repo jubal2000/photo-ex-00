@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 
 use crate::api;
 use crate::app::reload_catalog;
-use crate::components::{CropShape, ImageCropperModal, UploadProgressOverlay, read_image_data_url};
+use crate::components::{CropShape, ImageCropperModal, OfficialTypePicker, UploadProgressOverlay, read_image_data_url};
 use crate::firebase::storage;
 use crate::models::Card;
 use crate::state::*;
@@ -33,6 +33,7 @@ pub fn EditSeries(series_id: String) -> Element {
     let mut name = use_signal(|| orig.name.clone());
     let mut image_url = use_signal(|| orig.image_url.clone());
     let mut description = use_signal(|| orig.description.clone());
+    let mut official = use_signal(|| orig.kind());
     let mut cards_list = use_signal(|| initial_cards);
     let mut dragged_idx = use_signal(|| None::<usize>);
     let mut drag_over_idx = use_signal(|| None::<usize>);
@@ -88,6 +89,7 @@ pub fn EditSeries(series_id: String) -> Element {
                         &name(),
                         &image_url(),
                         &description(),
+                        official(),
                     ).await;
                     if let Err(e) = r1 {
                         Err(e)
@@ -207,6 +209,8 @@ pub fn EditSeries(series_id: String) -> Element {
                     oninput: move |e| description.set(e.value()),
                 }
             }
+
+            OfficialTypePicker { value: official(), on_change: move |k| official.set(k) }
 
             // Card Order Horizontal Scroll Section
             div { class: "series-card-order-section",

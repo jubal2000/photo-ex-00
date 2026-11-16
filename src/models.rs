@@ -2,7 +2,7 @@
 //!
 //! Shared catalogue (anyone signed in can add, see `firestore.rules`):
 //!   artists/{id}      name
-//!   categories/{id}   artistId, name
+//!   categories/{id}   artistId, name, squareCards
 //!   series/{id}       artistId, categoryId, name, officialType
 //!   cards/{id}        artistId, categoryId, seriesId, name, imageUrl, officialType
 //!
@@ -50,6 +50,8 @@ pub struct Category {
     pub name_lower: String,
     pub image_url: String,
     pub description: String,
+    /// Show this category's cards as squares (e.g. album covers) instead of photocards.
+    pub square_cards: bool,
     pub created_by: String,
     pub created_at: u64,
 }
@@ -249,6 +251,10 @@ impl Catalog {
     }
     pub fn series_name(&self, id: &str) -> String {
         self.series_of(id).map(|a| a.name.clone()).unwrap_or_default()
+    }
+    /// True when the card belongs to a category shown with square thumbnails.
+    pub fn is_square_card(&self, card: &Card) -> bool {
+        self.category(&card.category_id).map_or(false, |c| c.square_cards)
     }
     /// Copy without user-made (unofficial) series and cards, keeping official and
     /// sponsored ones (for the "official & sponsored only" option).

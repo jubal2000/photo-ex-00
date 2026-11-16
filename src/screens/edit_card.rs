@@ -155,6 +155,8 @@ pub fn EditCard(card_id: String) -> Element {
     let color_css = title_color();
     let preview_title_style = format!("font-family:{font_css};color:{color_css};");
 
+    let preview_square = catalog.is_square_card(&orig);
+
     rsx! {
         div { class: "page edit-card-page",
             h2 { class: "page-title", {app.tr("edit_card")} }
@@ -164,9 +166,9 @@ pub fn EditCard(card_id: String) -> Element {
                 div { class: "preview-badge-tag", {app.tr("preview")} }
                 div { class: "preview-card-wrap",
                     if preview_card.image_url.is_empty() {
-                        div { class: "preview-img preview-img-empty" }
+                        div { class: if preview_square { "preview-img preview-img-empty square" } else { "preview-img preview-img-empty" } }
                     } else {
-                        img { class: "preview-img", src: "{preview_card.image_url}", alt: "{preview_card.name}" }
+                        img { class: if preview_square { "preview-img square" } else { "preview-img" }, src: "{preview_card.image_url}", alt: "{preview_card.name}" }
                     }
                     div { class: "preview-card-info",
                         div { class: "preview-card-name", style: "{preview_title_style}",
@@ -335,7 +337,7 @@ pub fn EditCard(card_id: String) -> Element {
             if let Some(src) = crop_img() {
                 ImageCropperModal {
                     image_src: src,
-                    shape: CropShape::CardRect,
+                    shape: if catalog.is_square_card(&orig) { CropShape::Square } else { CropShape::CardRect },
                     on_cancel: move |_| crop_img.set(None),
                     on_confirm: on_cropped,
                 }

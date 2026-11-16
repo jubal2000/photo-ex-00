@@ -25,6 +25,7 @@ pub fn EditCategory(category_id: String) -> Element {
     let mut name = use_signal(|| orig.name.clone());
     let mut image_url = use_signal(|| orig.image_url.clone());
     let mut description = use_signal(|| orig.description.clone());
+    let mut square_cards = use_signal(|| orig.square_cards);
     let mut busy = use_signal(|| false);
     let mut crop_img = use_signal(|| None::<String>);
     let mut upload_progress = use_signal(|| None::<u8>);
@@ -75,6 +76,7 @@ pub fn EditCategory(category_id: String) -> Element {
                     &name(),
                     &image_url(),
                     &description(),
+                    square_cards(),
                 ).await,
                 Err(e) => Err(e),
             };
@@ -177,6 +179,16 @@ pub fn EditCategory(category_id: String) -> Element {
                     autocapitalize: "off",
                     spellcheck: "false",
                     oninput: move |e| description.set(e.value()),
+                }
+            }
+
+            label { class: "setting-row",
+                div {
+                    div { {app.tr("square_cards")} }
+                    div { class: "muted small", {app.tr("square_cards_desc")} }
+                }
+                input { r#type: "checkbox", checked: square_cards(),
+                    onchange: move |e| square_cards.set(e.checked()),
                 }
             }
 

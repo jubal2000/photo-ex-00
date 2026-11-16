@@ -221,6 +221,7 @@ pub async fn update_category(
     name: &str,
     image_url: &str,
     description: &str,
+    square_cards: bool,
 ) -> R<()> {
     let lower = norm(name);
     let mut fields = Map::new();
@@ -228,6 +229,7 @@ pub async fn update_category(
     fields.insert("nameLower".into(), json!(lower));
     fields.insert("imageUrl".into(), json!(image_url.trim()));
     fields.insert("description".into(), json!(description.trim()));
+    fields.insert("squareCards".into(), json!(square_cards));
     fs::update_fields(tok, &format!("categories/{category_id}"), fields).await
 }
 

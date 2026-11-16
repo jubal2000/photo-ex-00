@@ -154,6 +154,8 @@ strings! {
     "auto_match_none" => ["비슷한 레어도의 매칭 가능한 교환 카드가 없어요.", "No matching cards found with similar rarity.", "似たレアリティのマッチング可能なカードがありません。", "未找到类似稀有度的可匹配卡片。", "No se encontraron cartas de rareza similar para intercambiar."],
     "protect_single_card" => ["1장 카드 보호", "Protect single cards", "1枚所持カード保護", "保护单张卡片", "Proteger cartas únicas"],
     "protect_single_card_desc" => ["1장만 보유 중인 카드는 교환 가능으로 설정되지 않도록 보호합니다.", "Cards with only 1 owned copy cannot be set as tradable.", "1枚のみ所持しているカードは交換可能に設定できなくなります。", "只有1张的卡片无法设置为可交换。", "Las cartas de las que solo tengas 1 copia no se podrán marcar para intercambio."],
+    "square_cards" => ["카드를 정사각형으로 표시", "Show cards as squares", "カードを正方形で表示", "卡片以正方形显示", "Mostrar cartas cuadradas"],
+    "square_cards_desc" => ["앨범 커버처럼 정사각형 이미지를 쓰는 카테고리에 켜세요.", "Turn on for categories with square images such as album covers.", "アルバムジャケットなど正方形の画像を使うカテゴリーでオンにします。", "适用于专辑封面等正方形图片的分类。", "Actívalo para categorías con imágenes cuadradas, como portadas de álbum."],
     "official" => ["공식", "Official", "公式", "官方", "Oficial"],
     "sponsored" => ["협찬", "Sponsored", "協賛", "赞助", "Patrocinado"],
     "unofficial" => ["비공식", "Unofficial", "非公式", "非官方", "No oficial"],

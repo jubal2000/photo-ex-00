@@ -458,7 +458,12 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
             if let Some(src) = crop_img() {
                 {
                     let shape = match kind() {
-                        Kind::Card => CropShape::CardRect,
+                        Kind::Card => {
+                            let square = app.catalog.read().series_of(&series()).map_or(false, |s| {
+                                app.catalog.read().category(&s.category_id).map_or(false, |c| c.square_cards)
+                            });
+                            if square { CropShape::Square } else { CropShape::CardRect }
+                        }
                         Kind::Artist => CropShape::Circle,
                         Kind::Category | Kind::Series => CropShape::Square,
                     };

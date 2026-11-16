@@ -3406,10 +3406,57 @@ input.input.input-error {
 
 
 /* Official goods mark */
-.official-mark { display: inline-flex; align-items: center; gap: 3px; color: #3b82f6; vertical-align: -1px; margin-right: 4px; flex-shrink: 0; }
+.official-mark { display: inline-flex; align-items: center; gap: 3px; vertical-align: -1px; margin-right: 4px; flex-shrink: 0; }
 .official-mark svg { display: block; }
-.official-mark.with-label { margin: 0 0 0 6px; padding: 1px 6px 1px 3px; border-radius: 999px; background: rgba(59, 130, 246, 0.14); font-size: 10px; font-weight: 700; }
-.official-mark.sponsored { color: #f59e0b; }
-.official-mark.sponsored.with-label { background: rgba(245, 158, 11, 0.16); }
+.official-mark.with-label { margin: 0 0 0 6px; padding: 1px 6px 1px 3px; border-radius: 999px; font-size: 10px; font-weight: 700; }
+
+/* 1) 공식: 금색 (Gold) */
+.official-mark.official,
+.official-mark:not(.sponsored):not(.unofficial) {
+  color: #eab308;
+}
+.official-mark.official.with-label,
+.official-mark:not(.sponsored):not(.unofficial).with-label {
+  background: rgba(234, 179, 8, 0.16);
+  color: #eab308;
+}
+
+/* 2) 협찬: 파랑색 (Blue) */
+.official-mark.sponsored {
+  color: #3b82f6;
+}
+.official-mark.sponsored.with-label {
+  background: rgba(59, 130, 246, 0.16);
+  color: #3b82f6;
+}
+
+/* 3) 비공식: 회색 (Gray) */
+.official-mark.unofficial {
+  color: #9ca3af;
+}
+.official-mark.unofficial.with-label {
+  background: rgba(156, 163, 175, 0.16);
+  color: #9ca3af;
+}
+
 .segmented.three button { font-size: 13px; }
 .official-picker .muted.small { margin-top: 6px; }
+.official-picker .segmented button.on.official {
+  background: rgba(234, 179, 8, 0.2);
+  color: #eab308;
+  border-color: rgba(234, 179, 8, 0.4);
+}
+.official-picker .segmented button.on.sponsored {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.4);
+}
+.official-picker .segmented button.on.unofficial {
+  background: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+  border-color: rgba(156, 163, 175, 0.4);
+}
+
+/* Square cards (album covers etc.) */
+.card-thumb.square .card-img { aspect-ratio: 1 / 1; }
+.preview-img.square { aspect-ratio: 1 / 1; }

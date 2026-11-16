@@ -263,7 +263,14 @@ pub fn CardThumb(
     #[props(default)] small: bool,
     #[props(default)] rarity: Option<i64>,
 ) -> Element {
-    let class = if small { "card-thumb small" } else { "card-thumb" };
+    let app = crate::state::use_app();
+    let square = app.catalog.read().is_square_card(&card);
+    let class = match (small, square) {
+        (true, true) => "card-thumb small square",
+        (true, false) => "card-thumb small",
+        (false, true) => "card-thumb square",
+        (false, false) => "card-thumb",
+    };
     let font_family = match card.title_font.as_str() {
         "serif" => "Georgia, 'Nanum Myeongjo', serif",
         "cursive" => "'Brush Script MT', 'Nanum Pen Script', cursive, sans-serif",
@@ -294,25 +301,32 @@ pub fn CardThumb(
     }
 }
 
-/// Release-type mark: blue check for official, amber star for sponsored, nothing for user-made.
+/// Release-type mark: gold check for official, blue star for sponsored, gray mark for user-made (unofficial).
 #[component]
 pub fn OfficialMark(kind: crate::models::OfficialType, #[props(default)] with_label: bool) -> Element {
     use crate::models::OfficialType;
     let app = crate::state::use_app();
-    if kind == OfficialType::Unofficial {
-        return rsx! {};
-    }
     let label = app.tr(kind.label_key());
-    let base = if kind == OfficialType::Official { "official-mark" } else { "official-mark sponsored" };
+    let base = match kind {
+        OfficialType::Official => "official-mark official",
+        OfficialType::Sponsored => "official-mark sponsored",
+        OfficialType::Unofficial => "official-mark unofficial",
+    };
     let class = if with_label { format!("{base} with-label") } else { base.to_string() };
     rsx! {
         span { class: "{class}", title: "{label}", aria_label: "{label}",
             svg { view_box: "0 0 24 24", width: "12", height: "12",
                 circle { cx: "12", cy: "12", r: "11", fill: "currentColor" }
-                if kind == OfficialType::Official {
-                    path { d: "M7 12.5l3.2 3.2L17 9", fill: "none", stroke: "#fff", stroke_width: "2.6", stroke_linecap: "round", stroke_linejoin: "round" }
-                } else {
-                    path { d: "M12 5.5l1.9 3.9 4.3.6-3.1 3 .7 4.3L12 15.3l-3.8 2 .7-4.3-3.1-3 4.3-.6z", fill: "#fff" }
+                match kind {
+                    OfficialType::Official => rsx! {
+                        path { d: "M7 12.5l3.2 3.2L17 9", fill: "none", stroke: "#fff", stroke_width: "2.6", stroke_linecap: "round", stroke_linejoin: "round" }
+                    },
+                    OfficialType::Sponsored => rsx! {
+                        path { d: "M12 5.5l1.9 3.9 4.3.6-3.1 3 .7 4.3L12 15.3l-3.8 2 .7-4.3-3.1-3 4.3-.6z", fill: "#fff" }
+                    },
+                    OfficialType::Unofficial => rsx! {
+                        path { d: "M7 12h10", fill: "none", stroke: "#fff", stroke_width: "2.6", stroke_linecap: "round" }
+                    },
                 }
             }
             if with_label { span { "{label}" } }
@@ -330,8 +344,10 @@ pub fn OfficialTypePicker(value: crate::models::OfficialType, on_change: EventHa
             span { {app.tr("official_type")} }
             div { class: "segmented three",
                 for k in OfficialType::ALL {
-                    button { key: "{k.code()}", r#type: "button",
-                        class: if k == value { "on" } else { "" },
+                    button {
+                        key: "{k.code()}",
+                        r#type: "button",
+                        class: if k == value { format!("on {}", k.code()) } else { k.code().to_string() },
                         onclick: move |_| on_change.call(k),
                         {app.tr(k.label_key())}
                     }

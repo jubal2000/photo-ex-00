@@ -53,7 +53,7 @@ pub fn ArtistDetail(artist_id: String, category_id: Option<String>) -> Element {
             ));
         }
     }
-    available_categories.sort_by(|a, b| a.0.cmp(&b.0));
+    available_categories.sort_by_key(|(_, id)| catalog.category_sort_key(id));
 
     // Filter cards based on selected category (if any)
     let filtered_cards: Vec<Card> = if let Some(ref sel) = selected_cat() {
@@ -67,10 +67,10 @@ pub fn ArtistDetail(artist_id: String, category_id: Option<String>) -> Element {
 
     // Group cards: category_id -> series_id -> Vec<Card>
     // Sorted by category name and series name
-    let mut tree: BTreeMap<(String, String), BTreeMap<(String, String), Vec<Card>>> = BTreeMap::new();
+    let mut tree: BTreeMap<((bool, String), String), BTreeMap<(String, String), Vec<Card>>> = BTreeMap::new();
     for card in filtered_cards {
         let c_key = (
-            catalog.category_name(&card.category_id).to_lowercase(),
+            catalog.category_sort_key(&card.category_id),
             card.category_id.clone(),
         );
         let s_key = (
@@ -247,10 +247,9 @@ pub fn ArtistDetail(artist_id: String, category_id: Option<String>) -> Element {
                                                                 };
                                                                 let c_add = card.clone();
                                                                 let c_id_for_edit = card.id.clone();
-                                                                let rarity_count = app.global_card_counts.read().get(&card.id).copied().unwrap_or(0);
                                                                 rsx! {
                                                                     div { class: "card-box", key: "{card.id}",
-                                                                        CardThumb { card: card.clone(), badge, rarity: Some(rarity_count) }
+                                                                        CardThumb { card: card.clone(), badge }
                                                                         if *app.edit_mode.read() {
                                                                             div { class: "card-box-actions",
                                                                                 div { class: "action-left",

@@ -2,7 +2,7 @@
 //!
 //! Shared catalogue (anyone signed in can add, see `firestore.rules`):
 //!   artists/{id}      name
-//!   categories/{id}   artistId, name, squareCards
+//!   categories/{id}   artistId, name, cardShape, pinFirst, hideRarity
 //!   series/{id}       artistId, categoryId, name, officialType
 //!   cards/{id}        artistId, categoryId, seriesId, name, imageUrl, officialType
 //!
@@ -50,8 +50,12 @@ pub struct Category {
     pub name_lower: String,
     pub image_url: String,
     pub description: String,
-    /// Show this category's cards as squares (e.g. album covers) instead of photocards.
-    pub square_cards: bool,
+    /// How card images in this category are shown: `rect` (photocard, default) | `square` | `circle`.
+    pub card_shape: String,
+    /// Always listed before the other categories.
+    pub pin_first: bool,
+    /// Hide the rarity star on this category's cards.
+    pub hide_rarity: bool,
     pub created_by: String,
     pub created_at: u64,
 }
@@ -128,6 +132,57 @@ impl OfficialType {
     /// Official or sponsored (not user-made).
     pub fn is_licensed(self) -> bool {
         self != OfficialType::Unofficial
+    }
+}
+
+/// Display shape of card images.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ImageShape {
+    /// Photocard rectangle (55:85).
+    Rect,
+    Square,
+    Circle,
+}
+
+impl ImageShape {
+    pub const ALL: [ImageShape; 3] = [ImageShape::Rect, ImageShape::Square, ImageShape::Circle];
+
+    /// Unknown or empty values fall back to the photocard rectangle.
+    pub fn from_code(s: &str) -> Self {
+        match s {
+            "square" => ImageShape::Square,
+            "circle" => ImageShape::Circle,
+            _ => ImageShape::Rect,
+        }
+    }
+    pub fn code(self) -> &'static str {
+        match self {
+            ImageShape::Rect => "rect",
+            ImageShape::Square => "square",
+            ImageShape::Circle => "circle",
+        }
+    }
+    /// i18n key of the label.
+    pub fn label_key(self) -> &'static str {
+        match self {
+            ImageShape::Rect => "shape_rect",
+            ImageShape::Square => "shape_square",
+            ImageShape::Circle => "shape_circle",
+        }
+    }
+    /// Extra CSS class for thumbnails / previews ("" for the default rectangle).
+    pub fn css_class(self) -> &'static str {
+        match self {
+            ImageShape::Rect => "",
+            ImageShape::Square => "square",
+            ImageShape::Circle => "circle",
+        }
+    }
+}
+
+impl Category {
+    pub fn shape(&self) -> ImageShape {
+        ImageShape::from_code(&self.card_shape)
     }
 }
 
@@ -252,9 +307,17 @@ impl Catalog {
     pub fn series_name(&self, id: &str) -> String {
         self.series_of(id).map(|a| a.name.clone()).unwrap_or_default()
     }
-    /// True when the card belongs to a category shown with square thumbnails.
-    pub fn is_square_card(&self, card: &Card) -> bool {
-        self.category(&card.category_id).map_or(false, |c| c.square_cards)
+    /// Sort key for categories: pinned ones first, then by name.
+    pub fn category_sort_key(&self, id: &str) -> (bool, String) {
+        self.category(id).map_or((true, String::new()), |c| (!c.pin_first, c.name_lower.clone()))
+    }
+    /// Whether the rarity star is shown for a card (off when its category hides it).
+    pub fn shows_rarity(&self, card: &Card) -> bool {
+        self.category(&card.category_id).map_or(true, |c| !c.hide_rarity)
+    }
+    /// Display shape of a card's image, set on its category.
+    pub fn card_shape(&self, card: &Card) -> ImageShape {
+        self.category(&card.category_id).map_or(ImageShape::Rect, |c| c.shape())
     }
     /// Copy without user-made (unofficial) series and cards, keeping official and
     /// sponsored ones (for the "official & sponsored only" option).

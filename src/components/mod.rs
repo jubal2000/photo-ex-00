@@ -264,13 +264,9 @@ pub fn CardThumb(
     #[props(default)] rarity: Option<i64>,
 ) -> Element {
     let app = crate::state::use_app();
-    let square = app.catalog.read().is_square_card(&card);
-    let class = match (small, square) {
-        (true, true) => "card-thumb small square",
-        (true, false) => "card-thumb small",
-        (false, true) => "card-thumb square",
-        (false, false) => "card-thumb",
-    };
+    let shape = app.catalog.read().card_shape(&card).css_class();
+    let rarity = rarity.filter(|_| app.catalog.read().shows_rarity(&card));
+    let class = format!("card-thumb{}{}{}", if small { " small" } else { "" }, if shape.is_empty() { "" } else { " " }, shape);
     let font_family = match card.title_font.as_str() {
         "serif" => "Georgia, 'Nanum Myeongjo', serif",
         "cursive" => "'Brush Script MT', 'Nanum Pen Script', cursive, sans-serif",

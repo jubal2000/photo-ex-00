@@ -4,6 +4,7 @@ use crate::api;
 use crate::app::reload_catalog;
 use crate::components::{CropShape, ImageCropperModal, UploadProgressOverlay, read_image_data_url};
 use crate::firebase::storage;
+use crate::models::ImageShape;
 use crate::state::*;
 
 /// Edit an existing category: name, representative image, and description.
@@ -25,7 +26,9 @@ pub fn EditCategory(category_id: String) -> Element {
     let mut name = use_signal(|| orig.name.clone());
     let mut image_url = use_signal(|| orig.image_url.clone());
     let mut description = use_signal(|| orig.description.clone());
-    let mut square_cards = use_signal(|| orig.square_cards);
+    let mut card_shape = use_signal(|| orig.shape());
+    let mut pin_first = use_signal(|| orig.pin_first);
+    let mut show_rarity = use_signal(|| !orig.hide_rarity);
     let mut busy = use_signal(|| false);
     let mut crop_img = use_signal(|| None::<String>);
     let mut upload_progress = use_signal(|| None::<u8>);
@@ -76,7 +79,9 @@ pub fn EditCategory(category_id: String) -> Element {
                     &name(),
                     &image_url(),
                     &description(),
-                    square_cards(),
+                    card_shape(),
+                    pin_first(),
+                    !show_rarity(),
                 ).await,
                 Err(e) => Err(e),
             };
@@ -182,13 +187,36 @@ pub fn EditCategory(category_id: String) -> Element {
                 }
             }
 
+            div { class: "field shape-picker",
+                span { {app.tr("card_shape")} }
+                div { class: "segmented three",
+                    for s in ImageShape::ALL {
+                        button { key: "{s.code()}", r#type: "button",
+                            class: if s == card_shape() { "on" } else { "" },
+                            onclick: move |_| card_shape.set(s),
+                            span { class: "shape-icon shape-icon-{s.code()}" }
+                            {app.tr(s.label_key())}
+                        }
+                    }
+                }
+                div { class: "muted small", {app.tr("card_shape_desc")} }
+            }
             label { class: "setting-row",
                 div {
-                    div { {app.tr("square_cards")} }
-                    div { class: "muted small", {app.tr("square_cards_desc")} }
+                    div { {app.tr("show_rarity")} }
+                    div { class: "muted small", {app.tr("show_rarity_desc")} }
                 }
-                input { r#type: "checkbox", checked: square_cards(),
-                    onchange: move |e| square_cards.set(e.checked()),
+                input { r#type: "checkbox", checked: show_rarity(),
+                    onchange: move |e| show_rarity.set(e.checked()),
+                }
+            }
+            label { class: "setting-row",
+                div {
+                    div { {app.tr("pin_first")} }
+                    div { class: "muted small", {app.tr("pin_first_desc")} }
+                }
+                input { r#type: "checkbox", checked: pin_first(),
+                    onchange: move |e| pin_first.set(e.checked()),
                 }
             }
 

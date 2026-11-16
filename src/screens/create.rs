@@ -459,10 +459,12 @@ pub fn Create(initial_kind: Option<String>, initial_artist_id: Option<String>) -
                 {
                     let shape = match kind() {
                         Kind::Card => {
-                            let square = app.catalog.read().series_of(&series()).map_or(false, |s| {
-                                app.catalog.read().category(&s.category_id).map_or(false, |c| c.square_cards)
-                            });
-                            if square { CropShape::Square } else { CropShape::CardRect }
+                            let cat = app.catalog.read();
+                            let shape = cat
+                                .series_of(&series())
+                                .and_then(|s| cat.category(&s.category_id))
+                                .map_or(crate::models::ImageShape::Rect, |c| c.shape());
+                            super::edit_card::crop_shape_for(shape)
                         }
                         Kind::Artist => CropShape::Circle,
                         Kind::Category | Kind::Series => CropShape::Square,

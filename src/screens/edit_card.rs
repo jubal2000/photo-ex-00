@@ -155,7 +155,9 @@ pub fn EditCard(card_id: String) -> Element {
     let color_css = title_color();
     let preview_title_style = format!("font-family:{font_css};color:{color_css};");
 
-    let preview_square = catalog.is_square_card(&orig);
+    let preview_shape = catalog.card_shape(&orig);
+    let preview_class = format!("preview-img {}", preview_shape.css_class());
+    let preview_empty_class = format!("preview-img preview-img-empty {}", preview_shape.css_class());
 
     rsx! {
         div { class: "page edit-card-page",
@@ -166,9 +168,9 @@ pub fn EditCard(card_id: String) -> Element {
                 div { class: "preview-badge-tag", {app.tr("preview")} }
                 div { class: "preview-card-wrap",
                     if preview_card.image_url.is_empty() {
-                        div { class: if preview_square { "preview-img preview-img-empty square" } else { "preview-img preview-img-empty" } }
+                        div { class: "{preview_empty_class}" }
                     } else {
-                        img { class: if preview_square { "preview-img square" } else { "preview-img" }, src: "{preview_card.image_url}", alt: "{preview_card.name}" }
+                        img { class: "{preview_class}", src: "{preview_card.image_url}", alt: "{preview_card.name}" }
                     }
                     div { class: "preview-card-info",
                         div { class: "preview-card-name", style: "{preview_title_style}",
@@ -337,7 +339,7 @@ pub fn EditCard(card_id: String) -> Element {
             if let Some(src) = crop_img() {
                 ImageCropperModal {
                     image_src: src,
-                    shape: if catalog.is_square_card(&orig) { CropShape::Square } else { CropShape::CardRect },
+                    shape: crop_shape_for(catalog.card_shape(&orig)),
                     on_cancel: move |_| crop_img.set(None),
                     on_confirm: on_cropped,
                 }
@@ -349,3 +351,12 @@ pub fn EditCard(card_id: String) -> Element {
     }
 }
 
+
+/// Cropper frame matching a category's card display shape.
+pub(crate) fn crop_shape_for(shape: crate::models::ImageShape) -> CropShape {
+    match shape {
+        crate::models::ImageShape::Rect => CropShape::CardRect,
+        crate::models::ImageShape::Square => CropShape::Square,
+        crate::models::ImageShape::Circle => CropShape::Circle,
+    }
+}

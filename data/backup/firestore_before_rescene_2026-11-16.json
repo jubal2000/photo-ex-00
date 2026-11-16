@@ -1,0 +1,1252 @@
+[
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/artists/5Ukk3AKAtDkYiPcEJt8J",
+    "fields": {
+      "name": {
+        "stringValue": "리센느"
+      },
+      "createdAt": {
+        "integerValue": "1794454011"
+      },
+      "nameLower": {
+        "stringValue": "리센느"
+      },
+      "createdBy": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      }
+    },
+    "createTime": "2026-11-12T03:26:51.674875Z",
+    "updateTime": "2026-11-12T03:26:51.674875Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/artists/ljBlWkEYC2IkAjGqx5Ln",
+    "fields": {
+      "nameLower": {
+        "stringValue": "blackpink"
+      },
+      "color": {
+        "stringValue": ""
+      },
+      "createdBy": {
+        "stringValue": "wuw1YVbJWVTG1f2TObqAsct8UUu1"
+      },
+      "description": {
+        "stringValue": ""
+      },
+      "name": {
+        "stringValue": "BlackPink"
+      },
+      "imageUrl": {
+        "stringValue": ""
+      },
+      "createdAt": {
+        "integerValue": "1794462614"
+      }
+    },
+    "createTime": "2026-11-12T05:50:14.376286Z",
+    "updateTime": "2026-11-12T05:50:14.376286Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/categories/QiJdBhvh5bAdovEfdSqy",
+    "fields": {
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "description": {
+        "stringValue": ""
+      },
+      "nameLower": {
+        "stringValue": "키링"
+      },
+      "createdAt": {
+        "integerValue": "1794472672"
+      },
+      "imageUrl": {
+        "stringValue": ""
+      },
+      "createdBy": {
+        "stringValue": "wuw1YVbJWVTG1f2TObqAsct8UUu1"
+      },
+      "name": {
+        "stringValue": "키링"
+      }
+    },
+    "createTime": "2026-11-12T08:37:53.159820Z",
+    "updateTime": "2026-11-12T08:37:53.159820Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/categories/oubjDDVG5OdsjmYy2W6m",
+    "fields": {
+      "artistId": {
+        "stringValue": ""
+      },
+      "createdBy": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      },
+      "name": {
+        "stringValue": "Photo Card"
+      },
+      "nameLower": {
+        "stringValue": "photo card"
+      },
+      "createdAt": {
+        "integerValue": "1794456922"
+      }
+    },
+    "createTime": "2026-11-12T04:15:22.866505Z",
+    "updateTime": "2026-11-12T04:15:22.866505Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/series/6Wi0eV1hkzsKoHcRX6Lt",
+    "fields": {
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "name": {
+        "stringValue": "CU 리센느빵 포토카드"
+      },
+      "nameLower": {
+        "stringValue": "cu 리센느빵 포토카드"
+      },
+      "createdBy": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      },
+      "description": {
+        "stringValue": ""
+      },
+      "imageUrl": {
+        "stringValue": ""
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "createdAt": {
+        "integerValue": "1794456943"
+      }
+    },
+    "createTime": "2026-11-12T04:15:44.217778Z",
+    "updateTime": "2026-11-13T04:57:04.633798Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/series/6XxtdkVB0EdruXS9JwFg",
+    "fields": {
+      "imageUrl": {
+        "stringValue": ""
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "description": {
+        "stringValue": ""
+      },
+      "createdAt": {
+        "integerValue": "1794472661"
+      },
+      "name": {
+        "stringValue": "도미노 피자"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "nameLower": {
+        "stringValue": "도미노 피자"
+      },
+      "createdBy": {
+        "stringValue": "wuw1YVbJWVTG1f2TObqAsct8UUu1"
+      }
+    },
+    "createTime": "2026-11-12T08:37:41.273935Z",
+    "updateTime": "2026-11-12T08:37:41.273935Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/series/7lqXSQrnq8pI8SJI8UAB",
+    "fields": {
+      "nameLower": {
+        "stringValue": "미니 키링셋트 1"
+      },
+      "createdBy": {
+        "stringValue": "wuw1YVbJWVTG1f2TObqAsct8UUu1"
+      },
+      "imageUrl": {
+        "stringValue": ""
+      },
+      "description": {
+        "stringValue": ""
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "name": {
+        "stringValue": "미니 키링셋트 1"
+      },
+      "createdAt": {
+        "integerValue": "1794472732"
+      },
+      "categoryId": {
+        "stringValue": "QiJdBhvh5bAdovEfdSqy"
+      }
+    },
+    "createTime": "2026-11-12T08:38:53.096951Z",
+    "updateTime": "2026-11-12T08:38:53.096951Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/series/lGBY7w5xNmWElXSyPPGt",
+    "fields": {
+      "imageUrl": {
+        "stringValue": "https://firebasestorage.googleapis.com/v0/b/tango-player-00.firebasestorage.app/o/series%2F1794466694_34f27df5edd646e599d19f8eca97e030?alt=media&token=c890a025-81e8-4fda-853b-aa91ee72990f"
+      },
+      "description": {
+        "stringValue": ""
+      },
+      "artistId": {
+        "stringValue": "ljBlWkEYC2IkAjGqx5Ln"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "name": {
+        "stringValue": "5집 발매 기념"
+      },
+      "createdBy": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      },
+      "nameLower": {
+        "stringValue": "5집 발매 기념"
+      },
+      "createdAt": {
+        "integerValue": "1794466697"
+      }
+    },
+    "createTime": "2026-11-12T06:58:19.873934Z",
+    "updateTime": "2026-11-12T06:58:19.873934Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/cards/FJv9Xw2MsB2BwWy6uNkG",
+    "fields": {
+      "description": {
+        "stringValue": ""
+      },
+      "createdAt": {
+        "integerValue": "1794539830"
+      },
+      "categoryId": {
+        "stringValue": "QiJdBhvh5bAdovEfdSqy"
+      },
+      "imageUrl": {
+        "stringValue": "https://firebasestorage.googleapis.com/v0/b/tango-player-00.firebasestorage.app/o/cards%2F1794539815_d0367610a179472e914ac80221f4b4d2?alt=media&token=92927285-e3bb-47d2-9c0a-70c4946c1e5c"
+      },
+      "titleFont": {
+        "stringValue": ""
+      },
+      "createdBy": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      },
+      "nameLower": {
+        "stringValue": "키링 2"
+      },
+      "seriesId": {
+        "stringValue": "7lqXSQrnq8pI8SJI8UAB"
+      },
+      "titleColor": {
+        "stringValue": ""
+      },
+      "name": {
+        "stringValue": "키링 2"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      }
+    },
+    "createTime": "2026-11-13T03:17:13.082084Z",
+    "updateTime": "2026-11-13T03:17:13.082084Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/cards/Fwhc3dkzNcv3CRFYGdii",
+    "fields": {
+      "titleFont": {
+        "stringValue": ""
+      },
+      "nameLower": {
+        "stringValue": "카드 1"
+      },
+      "createdBy": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      },
+      "titleColor": {
+        "stringValue": "#ff7ab6"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "name": {
+        "stringValue": "카드 1"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "description": {
+        "stringValue": ""
+      },
+      "createdAt": {
+        "integerValue": "1794456973"
+      },
+      "sortOrder": {
+        "integerValue": "0"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "imageUrl": {
+        "stringValue": "https://firebasestorage.googleapis.com/v0/b/tango-player-00.firebasestorage.app/o/cards%2F1794456967_41bff762b9424ad5ab075bb608739bc6?alt=media&token=e2bd6803-3877-487b-a2ad-b4c23b748552"
+      }
+    },
+    "createTime": "2026-11-12T04:16:13.665540Z",
+    "updateTime": "2026-11-13T04:57:05.026971Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/cards/MDKbwtIoyduVRg8PV9xI",
+    "fields": {
+      "description": {
+        "stringValue": ""
+      },
+      "imageUrl": {
+        "stringValue": "https://firebasestorage.googleapis.com/v0/b/tango-player-00.firebasestorage.app/o/cards%2F1794466658_4e8da59127614c1796f070ab5295893e?alt=media&token=85df0f74-7144-42e3-ad6d-42a225f0e8cf"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "name": {
+        "stringValue": "카드 4"
+      },
+      "titleFont": {
+        "stringValue": ""
+      },
+      "createdBy": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      },
+      "nameLower": {
+        "stringValue": "카드 4"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "createdAt": {
+        "integerValue": "1794466661"
+      },
+      "sortOrder": {
+        "integerValue": "3"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "titleColor": {
+        "stringValue": ""
+      }
+    },
+    "createTime": "2026-11-12T06:57:43.909777Z",
+    "updateTime": "2026-11-13T04:57:05.056256Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/cards/N781C8bipPcfH0DHpQqn",
+    "fields": {
+      "createdAt": {
+        "integerValue": "1794469658"
+      },
+      "artistId": {
+        "stringValue": "ljBlWkEYC2IkAjGqx5Ln"
+      },
+      "name": {
+        "stringValue": "카드 1"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "seriesId": {
+        "stringValue": "lGBY7w5xNmWElXSyPPGt"
+      },
+      "imageUrl": {
+        "stringValue": "https://firebasestorage.googleapis.com/v0/b/tango-player-00.firebasestorage.app/o/cards%2F1794469653_59117bb502ee4587a9d73fee75469f30?alt=media&token=08a396a0-3be2-4f9b-a65a-3e0e527ab933"
+      },
+      "titleColor": {
+        "stringValue": ""
+      },
+      "nameLower": {
+        "stringValue": "카드 1"
+      },
+      "titleFont": {
+        "stringValue": ""
+      },
+      "createdBy": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      },
+      "description": {
+        "stringValue": ""
+      }
+    },
+    "createTime": "2026-11-12T07:47:41.236021Z",
+    "updateTime": "2026-11-12T07:47:41.236021Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/cards/Simz1EwrJE8lH12PzlLW",
+    "fields": {
+      "titleFont": {
+        "stringValue": ""
+      },
+      "nameLower": {
+        "stringValue": "카드 6"
+      },
+      "createdBy": {
+        "stringValue": "wuw1YVbJWVTG1f2TObqAsct8UUu1"
+      },
+      "titleColor": {
+        "stringValue": ""
+      },
+      "description": {
+        "stringValue": ""
+      },
+      "imageUrl": {
+        "stringValue": "https://firebasestorage.googleapis.com/v0/b/tango-player-00.firebasestorage.app/o/cards%2F1794550850_804e0550f59549a390940d992bf23d0f?alt=media&token=2c1a24cf-9ef5-4aec-8529-0411d0621fa5"
+      },
+      "name": {
+        "stringValue": "카드 6"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "createdAt": {
+        "integerValue": "1794550853"
+      },
+      "sortOrder": {
+        "integerValue": "5"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      }
+    },
+    "createTime": "2026-11-13T06:20:53.397094Z",
+    "updateTime": "2026-11-13T06:20:53.397094Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/cards/b8sp4wVSbRWBnkhAEljO",
+    "fields": {
+      "createdAt": {
+        "integerValue": "1794457002"
+      },
+      "sortOrder": {
+        "integerValue": "2"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "name": {
+        "stringValue": "카드 2"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "nameLower": {
+        "stringValue": "카드 2"
+      },
+      "createdBy": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      },
+      "titleFont": {
+        "stringValue": ""
+      },
+      "description": {
+        "stringValue": ""
+      },
+      "imageUrl": {
+        "stringValue": "https://firebasestorage.googleapis.com/v0/b/tango-player-00.firebasestorage.app/o/cards%2F1794456982_8dceec7510544650b3df07beb2835569?alt=media&token=be4520e8-a417-45a6-9345-feee67bcd066"
+      },
+      "titleColor": {
+        "stringValue": "#ff7ab6"
+      }
+    },
+    "createTime": "2026-11-12T04:16:42.506725Z",
+    "updateTime": "2026-11-13T04:57:05.030513Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/cards/iU1s6HrAl4WetqIxZwyv",
+    "fields": {
+      "imageUrl": {
+        "stringValue": "https://firebasestorage.googleapis.com/v0/b/tango-player-00.firebasestorage.app/o/cards%2F1794457543_4d565fa1614a4dd381aa5bd6eb8149c0?alt=media&token=7b9c8c1b-597d-459a-8eaa-37b703885d7c"
+      },
+      "createdBy": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      },
+      "nameLower": {
+        "stringValue": "카드 3"
+      },
+      "name": {
+        "stringValue": "카드 3"
+      },
+      "sortOrder": {
+        "integerValue": "1"
+      },
+      "createdAt": {
+        "integerValue": "1794457545"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      }
+    },
+    "createTime": "2026-11-12T04:25:46.184640Z",
+    "updateTime": "2026-11-13T04:57:04.980387Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/cards/qv61oJObpPxmGjhzykv9",
+    "fields": {
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "sortOrder": {
+        "integerValue": "4"
+      },
+      "createdAt": {
+        "integerValue": "1794539936"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "imageUrl": {
+        "stringValue": "https://firebasestorage.googleapis.com/v0/b/tango-player-00.firebasestorage.app/o/cards%2F1794539907_e1708b2ea1014736a9bf518f4b67dc9d?alt=media&token=47d3da86-2edb-4962-a3f7-655198a162db"
+      },
+      "titleColor": {
+        "stringValue": "#ffffff"
+      },
+      "name": {
+        "stringValue": "카드 5"
+      },
+      "createdBy": {
+        "stringValue": "wuw1YVbJWVTG1f2TObqAsct8UUu1"
+      },
+      "titleFont": {
+        "stringValue": ""
+      },
+      "nameLower": {
+        "stringValue": "카드 5"
+      },
+      "description": {
+        "stringValue": ""
+      }
+    },
+    "createTime": "2026-11-13T03:18:57.062002Z",
+    "updateTime": "2026-11-13T04:57:05.029512Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/trades/AmrwYEuoH8Egy55qt4FM",
+    "fields": {
+      "fromUid": {
+        "stringValue": "M4sH3jRiKMP4PTHp9M16EbevMXG3"
+      },
+      "acceptedAt": {
+        "integerValue": "1794560285558"
+      },
+      "createdAt": {
+        "integerValue": "1794556507"
+      },
+      "offered": {
+        "arrayValue": {
+          "values": [
+            {
+              "mapValue": {
+                "fields": {
+                  "cardId": {
+                    "stringValue": "b8sp4wVSbRWBnkhAEljO"
+                  },
+                  "qty": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "requested": {
+        "arrayValue": {
+          "values": [
+            {
+              "mapValue": {
+                "fields": {
+                  "cardId": {
+                    "stringValue": "iU1s6HrAl4WetqIxZwyv"
+                  },
+                  "qty": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "status": {
+        "stringValue": "accepted"
+      },
+      "toUid": {
+        "stringValue": "wuw1YVbJWVTG1f2TObqAsct8UUu1"
+      }
+    },
+    "createTime": "2026-11-13T07:55:07.536024Z",
+    "updateTime": "2026-11-13T08:58:05.716122Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/trades/JkoBqfAHatuouiVOf4W7",
+    "fields": {
+      "createdAt": {
+        "integerValue": "1794540079"
+      },
+      "status": {
+        "stringValue": "accepted"
+      },
+      "requested": {
+        "arrayValue": {
+          "values": [
+            {
+              "mapValue": {
+                "fields": {
+                  "cardId": {
+                    "stringValue": "Fwhc3dkzNcv3CRFYGdii"
+                  },
+                  "qty": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "fromUid": {
+        "stringValue": "wuw1YVbJWVTG1f2TObqAsct8UUu1"
+      },
+      "acceptedAt": {
+        "integerValue": "1794543105241"
+      },
+      "offered": {
+        "arrayValue": {
+          "values": [
+            {
+              "mapValue": {
+                "fields": {
+                  "cardId": {
+                    "stringValue": "qv61oJObpPxmGjhzykv9"
+                  },
+                  "qty": {
+                    "integerValue": "1"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "toUid": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      }
+    },
+    "createTime": "2026-11-13T03:21:19.770632Z",
+    "updateTime": "2026-11-13T04:11:46.258189Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/trades/AmrwYEuoH8Egy55qt4FM/messages/1kGvdCpcnremojFgzCmZ",
+    "fields": {
+      "senderUid": {
+        "stringValue": "wuw1YVbJWVTG1f2TObqAsct8UUu1"
+      },
+      "text": {
+        "stringValue": "ㅈㅇㄹ호ㅓ"
+      },
+      "tradeId": {
+        "stringValue": "AmrwYEuoH8Egy55qt4FM"
+      },
+      "senderName": {
+        "stringValue": "userwuw1Y"
+      },
+      "createdAt": {
+        "integerValue": "1794560299"
+      }
+    },
+    "createTime": "2026-11-13T08:58:19.866710Z",
+    "updateTime": "2026-11-13T08:58:19.866710Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/trades/AmrwYEuoH8Egy55qt4FM/messages/IeZ5CfLLuu8ti72oSOP3",
+    "fields": {
+      "senderUid": {
+        "stringValue": "M4sH3jRiKMP4PTHp9M16EbevMXG3"
+      },
+      "text": {
+        "stringValue": "fsd fas df"
+      },
+      "tradeId": {
+        "stringValue": "AmrwYEuoH8Egy55qt4FM"
+      },
+      "createdAt": {
+        "integerValue": "1794560318"
+      },
+      "senderName": {
+        "stringValue": "애플맨2000"
+      }
+    },
+    "createTime": "2026-11-13T08:58:38.586128Z",
+    "updateTime": "2026-11-13T08:58:38.586128Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/M4sH3jRiKMP4PTHp9M16EbevMXG3/holdings/Simz1EwrJE8lH12PzlLW",
+    "fields": {
+      "visible": {
+        "booleanValue": true
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "public": {
+        "booleanValue": true
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "tradable": {
+        "integerValue": "2"
+      },
+      "count": {
+        "integerValue": "3"
+      },
+      "cardId": {
+        "stringValue": "Simz1EwrJE8lH12PzlLW"
+      },
+      "ownerUid": {
+        "stringValue": "M4sH3jRiKMP4PTHp9M16EbevMXG3"
+      }
+    },
+    "createTime": "2026-11-13T07:47:41.313333Z",
+    "updateTime": "2026-11-13T07:47:44.483771Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/M4sH3jRiKMP4PTHp9M16EbevMXG3/holdings/b8sp4wVSbRWBnkhAEljO",
+    "fields": {
+      "ownerUid": {
+        "stringValue": "M4sH3jRiKMP4PTHp9M16EbevMXG3"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "cardId": {
+        "stringValue": "b8sp4wVSbRWBnkhAEljO"
+      },
+      "visible": {
+        "booleanValue": true
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "public": {
+        "booleanValue": true
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "count": {
+        "integerValue": "2"
+      },
+      "tradable": {
+        "integerValue": "0"
+      }
+    },
+    "createTime": "2026-11-13T07:48:44.261912Z",
+    "updateTime": "2026-11-13T08:58:05.716122Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/M4sH3jRiKMP4PTHp9M16EbevMXG3/holdings/iU1s6HrAl4WetqIxZwyv",
+    "fields": {
+      "ownerUid": {
+        "stringValue": "M4sH3jRiKMP4PTHp9M16EbevMXG3"
+      },
+      "cardId": {
+        "stringValue": "iU1s6HrAl4WetqIxZwyv"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "count": {
+        "integerValue": "1"
+      },
+      "tradable": {
+        "integerValue": "0"
+      },
+      "public": {
+        "booleanValue": true
+      },
+      "visible": {
+        "booleanValue": true
+      }
+    },
+    "createTime": "2026-11-13T08:58:05.716122Z",
+    "updateTime": "2026-11-13T08:58:05.716122Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/M4sH3jRiKMP4PTHp9M16EbevMXG3/holdings/qv61oJObpPxmGjhzykv9",
+    "fields": {
+      "public": {
+        "booleanValue": true
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "tradable": {
+        "integerValue": "1"
+      },
+      "count": {
+        "integerValue": "3"
+      },
+      "cardId": {
+        "stringValue": "qv61oJObpPxmGjhzykv9"
+      },
+      "visible": {
+        "booleanValue": true
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "ownerUid": {
+        "stringValue": "M4sH3jRiKMP4PTHp9M16EbevMXG3"
+      }
+    },
+    "createTime": "2026-11-13T07:47:38.020219Z",
+    "updateTime": "2026-11-13T07:47:40.420664Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/wuw1YVbJWVTG1f2TObqAsct8UUu1/holdings/Fwhc3dkzNcv3CRFYGdii",
+    "fields": {
+      "ownerUid": {
+        "stringValue": "wuw1YVbJWVTG1f2TObqAsct8UUu1"
+      },
+      "tradable": {
+        "integerValue": "1"
+      },
+      "visible": {
+        "booleanValue": true
+      },
+      "count": {
+        "integerValue": "2"
+      },
+      "cardId": {
+        "stringValue": "Fwhc3dkzNcv3CRFYGdii"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "public": {
+        "booleanValue": true
+      }
+    },
+    "createTime": "2026-11-13T04:11:46.258189Z",
+    "updateTime": "2026-11-13T06:20:17.075899Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/wuw1YVbJWVTG1f2TObqAsct8UUu1/holdings/MDKbwtIoyduVRg8PV9xI",
+    "fields": {
+      "tradable": {
+        "integerValue": "1"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "cardId": {
+        "stringValue": "MDKbwtIoyduVRg8PV9xI"
+      },
+      "visible": {
+        "booleanValue": true
+      },
+      "ownerUid": {
+        "stringValue": "wuw1YVbJWVTG1f2TObqAsct8UUu1"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "public": {
+        "booleanValue": true
+      },
+      "count": {
+        "integerValue": "2"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      }
+    },
+    "createTime": "2026-11-13T06:20:01.118772Z",
+    "updateTime": "2026-11-13T06:20:07.195234Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/wuw1YVbJWVTG1f2TObqAsct8UUu1/holdings/Simz1EwrJE8lH12PzlLW",
+    "fields": {
+      "public": {
+        "booleanValue": true
+      },
+      "ownerUid": {
+        "stringValue": "wuw1YVbJWVTG1f2TObqAsct8UUu1"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "cardId": {
+        "stringValue": "Simz1EwrJE8lH12PzlLW"
+      },
+      "visible": {
+        "booleanValue": true
+      },
+      "count": {
+        "integerValue": "2"
+      },
+      "tradable": {
+        "integerValue": "1"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      }
+    },
+    "createTime": "2026-11-13T06:21:03.723257Z",
+    "updateTime": "2026-11-13T06:21:08.446876Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/wuw1YVbJWVTG1f2TObqAsct8UUu1/holdings/b8sp4wVSbRWBnkhAEljO",
+    "fields": {
+      "ownerUid": {
+        "stringValue": "wuw1YVbJWVTG1f2TObqAsct8UUu1"
+      },
+      "cardId": {
+        "stringValue": "b8sp4wVSbRWBnkhAEljO"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "count": {
+        "integerValue": "1"
+      },
+      "tradable": {
+        "integerValue": "0"
+      },
+      "public": {
+        "booleanValue": true
+      },
+      "visible": {
+        "booleanValue": true
+      }
+    },
+    "createTime": "2026-11-13T08:58:05.716122Z",
+    "updateTime": "2026-11-13T08:58:05.716122Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/wuw1YVbJWVTG1f2TObqAsct8UUu1/holdings/iU1s6HrAl4WetqIxZwyv",
+    "fields": {
+      "visible": {
+        "booleanValue": true
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "public": {
+        "booleanValue": true
+      },
+      "ownerUid": {
+        "stringValue": "wuw1YVbJWVTG1f2TObqAsct8UUu1"
+      },
+      "cardId": {
+        "stringValue": "iU1s6HrAl4WetqIxZwyv"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "count": {
+        "integerValue": "3"
+      },
+      "tradable": {
+        "integerValue": "3"
+      }
+    },
+    "createTime": "2026-11-12T05:50:52.313437Z",
+    "updateTime": "2026-11-13T08:58:05.716122Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/wuw1YVbJWVTG1f2TObqAsct8UUu1/holdings/qv61oJObpPxmGjhzykv9",
+    "fields": {
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "public": {
+        "booleanValue": true
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "ownerUid": {
+        "stringValue": "wuw1YVbJWVTG1f2TObqAsct8UUu1"
+      },
+      "cardId": {
+        "stringValue": "qv61oJObpPxmGjhzykv9"
+      },
+      "visible": {
+        "booleanValue": true
+      },
+      "count": {
+        "integerValue": "1"
+      },
+      "tradable": {
+        "integerValue": "0"
+      }
+    },
+    "createTime": "2026-11-13T03:19:33.961480Z",
+    "updateTime": "2026-11-13T04:11:46.258189Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/xGjMnQYP61gozSpqcXvm2DDUONp2/holdings/FJv9Xw2MsB2BwWy6uNkG",
+    "fields": {
+      "visible": {
+        "booleanValue": true
+      },
+      "public": {
+        "booleanValue": true
+      },
+      "ownerUid": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      },
+      "count": {
+        "integerValue": "3"
+      },
+      "tradable": {
+        "integerValue": "2"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "categoryId": {
+        "stringValue": "QiJdBhvh5bAdovEfdSqy"
+      },
+      "cardId": {
+        "stringValue": "FJv9Xw2MsB2BwWy6uNkG"
+      },
+      "seriesId": {
+        "stringValue": "7lqXSQrnq8pI8SJI8UAB"
+      }
+    },
+    "createTime": "2026-11-13T03:17:34.713939Z",
+    "updateTime": "2026-11-13T03:17:39.572801Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/xGjMnQYP61gozSpqcXvm2DDUONp2/holdings/Fwhc3dkzNcv3CRFYGdii",
+    "fields": {
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "cardId": {
+        "stringValue": "Fwhc3dkzNcv3CRFYGdii"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "public": {
+        "booleanValue": true
+      },
+      "visible": {
+        "booleanValue": true
+      },
+      "ownerUid": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      },
+      "count": {
+        "integerValue": "1"
+      },
+      "tradable": {
+        "integerValue": "1"
+      }
+    },
+    "createTime": "2026-11-12T04:17:37.497940Z",
+    "updateTime": "2026-11-13T04:11:46.258189Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/xGjMnQYP61gozSpqcXvm2DDUONp2/holdings/b8sp4wVSbRWBnkhAEljO",
+    "fields": {
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "cardId": {
+        "stringValue": "b8sp4wVSbRWBnkhAEljO"
+      },
+      "visible": {
+        "booleanValue": true
+      },
+      "ownerUid": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "public": {
+        "booleanValue": true
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "tradable": {
+        "integerValue": "3"
+      },
+      "count": {
+        "integerValue": "3"
+      }
+    },
+    "createTime": "2026-11-12T04:17:43.351320Z",
+    "updateTime": "2026-11-12T07:58:31.300787Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/xGjMnQYP61gozSpqcXvm2DDUONp2/holdings/iU1s6HrAl4WetqIxZwyv",
+    "fields": {
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "visible": {
+        "booleanValue": true
+      },
+      "public": {
+        "booleanValue": true
+      },
+      "cardId": {
+        "stringValue": "iU1s6HrAl4WetqIxZwyv"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "count": {
+        "integerValue": "1"
+      },
+      "tradable": {
+        "integerValue": "0"
+      },
+      "ownerUid": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      }
+    },
+    "createTime": "2026-11-12T08:26:27.165663Z",
+    "updateTime": "2026-11-12T08:26:27.165663Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/xGjMnQYP61gozSpqcXvm2DDUONp2/holdings/qv61oJObpPxmGjhzykv9",
+    "fields": {
+      "ownerUid": {
+        "stringValue": "xGjMnQYP61gozSpqcXvm2DDUONp2"
+      },
+      "cardId": {
+        "stringValue": "qv61oJObpPxmGjhzykv9"
+      },
+      "artistId": {
+        "stringValue": "5Ukk3AKAtDkYiPcEJt8J"
+      },
+      "categoryId": {
+        "stringValue": "oubjDDVG5OdsjmYy2W6m"
+      },
+      "seriesId": {
+        "stringValue": "6Wi0eV1hkzsKoHcRX6Lt"
+      },
+      "count": {
+        "integerValue": "1"
+      },
+      "tradable": {
+        "integerValue": "0"
+      },
+      "public": {
+        "booleanValue": true
+      },
+      "visible": {
+        "booleanValue": true
+      }
+    },
+    "createTime": "2026-11-13T04:11:46.258189Z",
+    "updateTime": "2026-11-13T04:11:46.258189Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/xGjMnQYP61gozSpqcXvm2DDUONp2/groupVisibility/artist_5Ukk3AKAtDkYiPcEJt8J",
+    "fields": {
+      "public": {
+        "booleanValue": true
+      }
+    },
+    "createTime": "2026-11-12T05:37:36.524434Z",
+    "updateTime": "2026-11-12T05:37:51.986075Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/xGjMnQYP61gozSpqcXvm2DDUONp2/groupVisibility/category_oubjDDVG5OdsjmYy2W6m",
+    "fields": {
+      "public": {
+        "booleanValue": true
+      }
+    },
+    "createTime": "2026-11-12T05:37:36.912411Z",
+    "updateTime": "2026-11-12T05:37:51.597503Z"
+  },
+  {
+    "name": "projects/tango-player-00/databases/(default)/documents/users/xGjMnQYP61gozSpqcXvm2DDUONp2/groupVisibility/series_6Wi0eV1hkzsKoHcRX6Lt",
+    "fields": {
+      "public": {
+        "booleanValue": true
+      }
+    },
+    "createTime": "2026-11-12T05:37:37.263272Z",
+    "updateTime": "2026-11-12T05:37:51.318394Z"
+  }
+]

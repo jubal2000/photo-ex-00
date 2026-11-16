@@ -15,6 +15,8 @@ pub fn Holdings() -> Element {
     let mut groups = use_signal(HashMap::<String, bool>::new);
     let mut show_all = use_signal(|| false);
     let mut selected_artist = use_signal(|| None::<String>);
+    // Category filter, keyed by lowercased category name so "앨범" etc. work across artists.
+    let mut selected_cat = use_signal(|| None::<String>);
 
     use_future(move || async move {
         let uid = app.uid();
@@ -71,18 +73,58 @@ pub fn Holdings() -> Element {
         }
     }
 
-    // Filter by selected artist if set
-    let filtered_items: Vec<Holding> = if let Some(ref aid) = selected_artist() {
+    // In "show all" mode the all-artists option is disabled (too many cards), so fall back
+    // to an artist: the first one I own cards of, else the first in the list.
+    let effective_artist: Option<String> = match selected_artist() {
+        Some(a) if available_artists.contains_key(&a) => Some(a),
+        _ if show_all() => holdings
+            .iter()
+            .map(|h| h.artist_id.clone())
+            .find(|a| available_artists.contains_key(a))
+            .or_else(|| available_artists.keys().next().cloned()),
+        _ => None,
+    };
+
+    // Filter by artist
+    let artist_items: Vec<Holding> = if let Some(ref aid) = effective_artist {
         items_to_show.into_iter().filter(|h| &h.artist_id == aid).collect()
     } else {
         items_to_show
     };
 
+    // Categories present after the artist filter: name key -> (sort key, display name)
+    let mut cat_map: HashMap<String, ((bool, String), String)> = HashMap::new();
+    for h in &artist_items {
+        let name = catalog.category_name(&h.category_id);
+        if name.is_empty() {
+            continue;
+        }
+        let key = name.to_lowercase();
+        let sk = catalog.category_sort_key(&h.category_id);
+        let e = cat_map.entry(key).or_insert((sk.clone(), name));
+        if sk < e.0 {
+            e.0 = sk;
+        }
+    }
+    let mut available_cats: Vec<(String, String, (bool, String))> =
+        cat_map.into_iter().map(|(k, (sk, n))| (k, n, sk)).collect();
+    available_cats.sort_by(|a, b| a.2.cmp(&b.2));
+    let effective_cat: Option<String> = selected_cat().filter(|c| available_cats.iter().any(|x| &x.0 == c));
+
+    let filtered_items: Vec<Holding> = if let Some(ref ck) = effective_cat {
+        artist_items
+            .into_iter()
+            .filter(|h| &catalog.category_name(&h.category_id).to_lowercase() == ck)
+            .collect()
+    } else {
+        artist_items
+    };
+
     // artist -> category -> series -> holdings (sorted by names)
-    let mut tree: BTreeMap<(String, String), BTreeMap<(String, String), BTreeMap<(String, String), Vec<Holding>>>> = BTreeMap::new();
+    let mut tree: BTreeMap<(String, String), BTreeMap<((bool, String), String), BTreeMap<(String, String), Vec<Holding>>>> = BTreeMap::new();
     for h in filtered_items {
         let a = (catalog.artist_name(&h.artist_id).to_lowercase(), h.artist_id.clone());
-        let c = (catalog.category_name(&h.category_id).to_lowercase(), h.category_id.clone());
+        let c = (catalog.category_sort_key(&h.category_id), h.category_id.clone());
         let s = (catalog.series_name(&h.series_id).to_lowercase(), h.series_id.clone());
         tree.entry(a).or_default().entry(c).or_default().entry(s).or_default().push(h);
     }
@@ -108,17 +150,32 @@ pub fn Holdings() -> Element {
 
     rsx! {
         div { class: "page holdings",
+            // View Mode Tabs (Owned only vs Show all)
+            div { class: "segmented trades-tabs holdings-tabs",
+                button {
+                    class: if !show_all() { "tab-btn on active" } else { "tab-btn" },
+                    onclick: move |_| show_all.set(false),
+                    span { class: "tab-label", {app.tr("holdings_only")} }
+                }
+                button {
+                    class: if show_all() { "tab-btn on active" } else { "tab-btn" },
+                    onclick: move |_| show_all.set(true),
+                    span { class: "tab-label", {app.tr("show_all_cards")} }
+                }
+            }
+
             // Artist Filter Bar (Scrollable chips)
             if !available_artists.is_empty() {
                 div { class: "artist-filter-bar chips",
                     button {
-                        class: if selected_artist().is_none() { "chip on" } else { "chip" },
-                        onclick: move |_| selected_artist.set(None),
+                        class: if effective_artist.is_none() { "chip on" } else { "chip" },
+                        disabled: show_all(),
+                        onclick: move |_| { selected_artist.set(None); selected_cat.set(None); },
                         {app.tr("all_artists")}
                     }
                     for (aid, aname) in available_artists {
                         {
-                            let is_sel = selected_artist().as_ref() == Some(&aid);
+                            let is_sel = effective_artist.as_ref() == Some(&aid);
                             let aid_btn = aid.clone();
                             rsx! {
                                 button {
@@ -126,7 +183,10 @@ pub fn Holdings() -> Element {
                                     class: if is_sel { "chip on" } else { "chip" },
                                     onclick: move |_| {
                                         if is_sel {
-                                            selected_artist.set(None);
+                                            // In "show all" mode an artist must stay selected.
+                                            if !show_all() {
+                                                selected_artist.set(None);
+                                            }
                                         } else {
                                             selected_artist.set(Some(aid_btn.clone()));
                                         }
@@ -139,17 +199,34 @@ pub fn Holdings() -> Element {
                 }
             }
 
-            // View Mode Filter Bar (Owned only vs Show all)
-            div { class: "holdings-filter-bar chips",
-                button {
-                    class: if !show_all() { "chip on" } else { "chip" },
-                    onclick: move |_| show_all.set(false),
-                    {app.tr("holdings_only")}
-                }
-                button {
-                    class: if show_all() { "chip on" } else { "chip" },
-                    onclick: move |_| show_all.set(true),
-                    {app.tr("show_all_cards")}
+            // Category Filter Bar
+            if !available_cats.is_empty() {
+                div { class: "artist-filter-bar category-filter-bar chips",
+                    button {
+                        class: if effective_cat.is_none() { "chip on" } else { "chip" },
+                        onclick: move |_| selected_cat.set(None),
+                        {app.tr("all_categories")}
+                    }
+                    for (ck, cname, _) in available_cats {
+                        {
+                            let is_sel = effective_cat.as_ref() == Some(&ck);
+                            let ck_btn = ck.clone();
+                            rsx! {
+                                button {
+                                    key: "{ck}",
+                                    class: if is_sel { "chip on" } else { "chip" },
+                                    onclick: move |_| {
+                                        if is_sel {
+                                            selected_cat.set(None);
+                                        } else {
+                                            selected_cat.set(Some(ck_btn.clone()));
+                                        }
+                                    },
+                                    "{cname}"
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

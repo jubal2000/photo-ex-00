@@ -118,7 +118,7 @@ pub fn Trade(partner_uid: String, category_id: Option<String>, artist_id: Option
             }
         }
     }
-    available_categories.sort_by(|a, b| a.0.cmp(&b.0));
+    available_categories.sort_by_key(|(_, id)| catalog.category_sort_key(id));
 
     // Ensure selected_cat is set to a valid category in this artist
     let cur_cat = selected_cat().or_else(|| {

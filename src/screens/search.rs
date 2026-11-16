@@ -102,13 +102,11 @@ pub fn Search() -> Element {
                         let crumb = format!("{} · {}", catalog.category_name(&c.category_id), catalog.series_name(&c.series_id));
                         let c2 = c.clone();
                         let edit_id = c.id.clone();
-                        let rarity_count = app.global_card_counts.read().get(&c.id).copied().unwrap_or(0);
                         rsx! {
                             div { class: "card-box", key: "{c.id}",
                                 CardThumb {
                                     card: c.clone(),
                                     badge: if is_owned { Some(app.tr("scope_owned").to_string()) } else { None },
-                                    rarity: Some(rarity_count),
                                 }
                                 div { class: "muted small crumb search-crumb-row",
                                     ArtistAvatar {

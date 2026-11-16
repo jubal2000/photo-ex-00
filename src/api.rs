@@ -22,7 +22,7 @@ pub async fn load_catalog(tok: &str) -> R<Catalog> {
     );
     let mut cat = Catalog { artists: a?, categories: c?, series: s?, cards: k? };
     cat.artists.sort_by(|x, y| x.name_lower.cmp(&y.name_lower));
-    cat.categories.sort_by(|x, y| x.name_lower.cmp(&y.name_lower));
+    cat.categories.sort_by(|x, y| (!x.pin_first, &x.name_lower).cmp(&(!y.pin_first, &y.name_lower)));
     cat.series.sort_by(|x, y| x.name_lower.cmp(&y.name_lower));
     cat.cards.sort_by(|x, y| {
         x.sort_order
@@ -221,7 +221,9 @@ pub async fn update_category(
     name: &str,
     image_url: &str,
     description: &str,
-    square_cards: bool,
+    card_shape: ImageShape,
+    pin_first: bool,
+    hide_rarity: bool,
 ) -> R<()> {
     let lower = norm(name);
     let mut fields = Map::new();
@@ -229,7 +231,9 @@ pub async fn update_category(
     fields.insert("nameLower".into(), json!(lower));
     fields.insert("imageUrl".into(), json!(image_url.trim()));
     fields.insert("description".into(), json!(description.trim()));
-    fields.insert("squareCards".into(), json!(square_cards));
+    fields.insert("cardShape".into(), json!(card_shape.code()));
+    fields.insert("pinFirst".into(), json!(pin_first));
+    fields.insert("hideRarity".into(), json!(hide_rarity));
     fs::update_fields(tok, &format!("categories/{category_id}"), fields).await
 }
 

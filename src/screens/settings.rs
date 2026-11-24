@@ -23,6 +23,16 @@ pub fn Settings() -> Element {
                     }
                 }
             }
+            div { class: "field", span { {app.tr("theme")} }
+                div { class: "segmented theme-picker",
+                    button { class: if *app.light_theme.read() { "on" } else { "" },
+                        onclick: move |_| { app.light_theme.set(true); storage::set(KEY_THEME, "light"); },
+                        {app.tr("theme_light")} }
+                    button { class: if !*app.light_theme.read() { "on" } else { "" },
+                        onclick: move |_| { app.light_theme.set(false); storage::set(KEY_THEME, "dark"); },
+                        {app.tr("theme_dark")} }
+                }
+            }
             label { class: "setting-row",
                 span { {app.tr("auto_login")} }
                 input { r#type: "checkbox", checked: auto(),

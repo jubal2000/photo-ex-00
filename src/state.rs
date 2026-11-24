@@ -15,6 +15,7 @@ pub const KEY_LANG: &str = "lang";
 pub const KEY_EDIT_MODE: &str = "edit_mode";
 pub const KEY_PROTECT_SINGLE_CARD: &str = "protect_single_card";
 pub const KEY_OFFICIAL_ONLY: &str = "official_only";
+pub const KEY_THEME: &str = "theme";
 
 /// Screens of the single-screen app. There is no GNB; screens are pushed on a stack
 /// and the header shows a back button when the stack is deeper than the home screen.
@@ -54,6 +55,8 @@ pub struct AppState {
     pub protect_single_card: Signal<bool>,
     /// Show only official series and cards in browsing lists.
     pub official_only: Signal<bool>,
+    /// UI theme: true = light "goods shop" theme, false = dark theme.
+    pub light_theme: Signal<bool>,
     /// Global total count of cards across all users (for rarity star).
     pub global_card_counts: Signal<std::collections::HashMap<String, i64>>,
 }
@@ -64,6 +67,7 @@ impl AppState {
         let edit_mode = storage::get(KEY_EDIT_MODE).map(|v| v == "true" || v == "1").unwrap_or(false);
         let protect_single_card = storage::get(KEY_PROTECT_SINGLE_CARD).map(|v| v == "true" || v == "1").unwrap_or(false);
         let official_only = storage::get(KEY_OFFICIAL_ONLY).map(|v| v == "true" || v == "1").unwrap_or(false);
+        let light_theme = storage::get(KEY_THEME).map(|v| v != "dark").unwrap_or(true);
         Self {
             session: Signal::new(None),
             lang: Signal::new(lang),
@@ -77,6 +81,7 @@ impl AppState {
             edit_mode: Signal::new(edit_mode),
             protect_single_card: Signal::new(protect_single_card),
             official_only: Signal::new(official_only),
+            light_theme: Signal::new(light_theme),
             global_card_counts: Signal::new(std::collections::HashMap::new()),
         }
     }

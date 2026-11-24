@@ -231,7 +231,7 @@ pub fn App() -> Element {
         document::Stylesheet { href: MAIN_CSS }
         document::Link { rel: "icon", r#type: "image/png", href: FAVICON }
         document::Meta { name: "viewport", content: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" }
-        div { class: if !signed_in && booted { "app app-login" } else { "app" },
+        div { class: format!("app {} {}", if *app.light_theme.read() { "theme-light" } else { "theme-dark" }, if !signed_in && booted { "app-login" } else { "" }),
             if !booted {
                 div { class: "splash", div { class: "spinner" } }
             } else if !signed_in {

@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 use crate::components::{AdBanner, Header, SideMenu};
 use crate::firebase::auth;
 use crate::models::Profile;
-use crate::platform::{biometric, storage};
+use crate::platform::{self, biometric, storage};
 use crate::screens;
 use crate::state::*;
 use crate::api;
@@ -19,6 +19,11 @@ pub fn App() -> Element {
     // Startup: auto-login with the stored refresh token (unless biometric gate is on,
     // in which case the login screen asks for biometrics first).
     use_hook(move || {
+        let mut app_boot_guard = app;
+        spawn(async move {
+            platform::sleep_ms(3500).await;
+            app_boot_guard.booted.set(true);
+        });
         spawn(async move {
             #[cfg(target_arch = "wasm32")]
             {
@@ -152,6 +157,11 @@ pub fn App() -> Element {
     let uid = use_memo(move || app.session.read().as_ref().map(|s| s.uid.clone()));
     use_effect(move || {
         if let Some(uid) = uid() {
+            let mut app_data_guard = app;
+            spawn(async move {
+                platform::sleep_ms(3500).await;
+                app_data_guard.data_loaded.set(true);
+            });
             spawn(async move { load_user_data(app, uid).await });
         }
     });

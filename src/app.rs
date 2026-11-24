@@ -10,6 +10,7 @@ use crate::api;
 
 const MAIN_CSS: Asset = asset!("/assets/main.css");
 const FAVICON: Asset = asset!("/assets/favicon.png");
+const LOGO: Asset = asset!("/assets/logo.svg");
 
 #[component]
 pub fn App() -> Element {
@@ -226,14 +227,27 @@ pub fn App() -> Element {
 
     let signed_in = app.session.read().is_some();
     let booted = *app.booted.read();
+    let data_loaded = *app.data_loaded.read();
+    let show_splash = !booted || (signed_in && !data_loaded);
 
     rsx! {
         document::Stylesheet { href: MAIN_CSS }
         document::Link { rel: "icon", r#type: "image/png", href: FAVICON }
         document::Meta { name: "viewport", content: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" }
         div { class: format!("app {} {}", if *app.light_theme.read() { "theme-light" } else { "theme-dark" }, if !signed_in && booted { "app-login" } else { "" }),
-            if !booted {
-                div { class: "splash", div { class: "spinner" } }
+            if show_splash {
+                div { class: "splash-screen",
+                    div { class: "splash-body",
+                        img { class: "splash-logo", src: LOGO, alt: "PhotoEx" }
+                        div { class: "splash-title-wrap",
+                            span { class: "splash-app-title", "PhotoEx" }
+                            span { class: "splash-app-desc", {app.tr("login_title")} }
+                        }
+                        div { class: "splash-spinner-wrap",
+                            div { class: "splash-spinner" }
+                        }
+                    }
+                }
             } else if !signed_in {
                 screens::Login {}
             } else {
@@ -275,7 +289,10 @@ fn screen_view(s: Screen) -> Element {
 pub async fn load_user_data(mut app: AppState, uid: String) {
     let tok = match app.token().await {
         Ok(t) => t,
-        Err(e) => return app.show_error(&e),
+        Err(e) => {
+            app.data_loaded.set(true);
+            return app.show_error(&e);
+        }
     };
     let (p, c, h) = futures_util::join!(
         api::load_profile(&tok, &uid),
@@ -317,6 +334,7 @@ pub async fn load_user_data(mut app: AppState, uid: String) {
         }
         Err(e) => app.show_error(&e),
     }
+    app.data_loaded.set(true);
 }
 
 pub async fn reload_catalog(mut app: AppState) {

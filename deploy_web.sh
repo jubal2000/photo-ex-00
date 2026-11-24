@@ -11,7 +11,7 @@ dx build --platform web --release
 
 cp web/.htaccess target/dx/photo_exchanger/release/web/public/.htaccess 2>/dev/null || true
 
-python3 -c '
+python3 - <<'PYEOF'
 path = "target/dx/photo_exchanger/release/web/public/index.html"
 try:
     with open(path, "r", encoding="utf-8") as f:
@@ -46,12 +46,17 @@ try:
 </script></head>"""
     if "</head>" in html and "__peImeGuard" not in html:
         html = html.replace("</head>", patch, 1)
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(html)
-        print("  ✓ Injected IME guard to index.html")
+
+    splash_html = """<div id="main"><div class="splash-screen" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0c13;color:#f3f1f7;font-family:-apple-system,BlinkMacSystemFont,sans-serif;z-index:9999;"><div style="display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;"><img src="/photo-ex/assets/logo.svg" alt="PhotoEx" style="width:96px;height:96px;"><div style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:28px;font-weight:800;letter-spacing:-0.4px;">PhotoEx</span><span style="font-size:13px;color:#948fa3;">포토카드를 교환해 보세요</span></div><div style="margin-top:14px;"><div style="width:28px;height:28px;border:3px solid rgba(124,107,255,0.2);border-top-color:#7c6bff;border-radius:50%;animation:spin 0.8s linear infinite;"></div></div></div></div></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>"""
+    if '<div id="main"></div>' in html:
+        html = html.replace('<div id="main"></div>', splash_html, 1)
+
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(html)
+    print("  [ok] Injected IME guard and static splash to index.html")
 except Exception as e:
     print("  ! Index.html patch notice:", e)
-'
+PYEOF
 
 echo "▶ Uploading to FTP: ${FTP_HOST}/${FTP_REMOTE_DIR}/"
 python3 - <<PYEOF

@@ -49,6 +49,8 @@ pub struct AppState {
     pub toast: Signal<Option<String>>,
     /// Becomes true once the startup auto-login attempt finished.
     pub booted: Signal<bool>,
+    /// Becomes true once initial profile/catalog/holdings data has finished loading.
+    pub data_loaded: Signal<bool>,
     /// Global edit mode toggle (shows add/edit buttons when true).
     pub edit_mode: Signal<bool>,
     /// Protect cards with count == 1 from being set as tradable.
@@ -78,6 +80,7 @@ impl AppState {
             menu_open: Signal::new(false),
             toast: Signal::new(None),
             booted: Signal::new(false),
+            data_loaded: Signal::new(false),
             edit_mode: Signal::new(edit_mode),
             protect_single_card: Signal::new(protect_single_card),
             official_only: Signal::new(official_only),
@@ -186,6 +189,7 @@ impl AppState {
         } else {
             storage::secure_remove(KEY_REFRESH);
         }
+        self.data_loaded.set(false);
         self.session.set(Some(s));
         self.open(Screen::Home);
     }
@@ -196,6 +200,7 @@ impl AppState {
         self.session.set(None);
         self.profile.set(Profile::default());
         self.holdings.set(vec![]);
+        self.data_loaded.set(false);
         self.open(Screen::Home);
     }
 }
